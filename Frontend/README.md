@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Frontend Documentation
 
-## Getting Started
+## 1. Tóm tắt về dự án
+Dự án này là một nền tảng học trực tuyến được xây dựng bằng Next.js. Mục đích chính là cung cấp một giao diện người dùng thân thiện để quản lý khóa học, người dùng, và các tính năng liên quan đến học tập trực tuyến.
 
-First, run the development server:
-
+## 2. Hướng dẫn cài đặt
+### Clone dự án
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone [repository-url]
+cd Frontend
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Cài đặt thư viện/phụ thuộc
+```bash
+npm install
+# hoặc
+yarn install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Cấu hình môi trường
+Tạo file `.env.local` dựa trên file mẫu `.env.sample` và điền các thông tin cần thiết.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## 3. Cách sử dụng
+### Chạy dự án
+Khởi động server phát triển:
+```bash
+npm run dev
+# hoặc
+yarn dev
+```
 
-## Learn More
+Mở trình duyệt và truy cập [http://localhost:3000](http://localhost:3000).
 
-To learn more about Next.js, take a look at the following resources:
+### Các endpoint chính
+- Trang chủ: `/`
+- Trang khóa học: `/courses`
+- Trang quản trị: `/admin`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 4. Giải thích luồng hoạt động
+1. Người dùng truy cập trang web và đăng nhập.
+2. Hệ thống xác thực thông tin người dùng qua API.
+3. Sau khi đăng nhập thành công, người dùng có thể truy cập các tính năng như xem khóa học, quản lý tài khoản, hoặc sử dụng các công cụ học tập.
+4. Dữ liệu được lấy từ backend và hiển thị trên giao diện frontend.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## 5. Cấu trúc thư mục
+- `app/`: Chứa các trang và layout chính.
+- `components/`: Các thành phần giao diện tái sử dụng.
+- `redux/`: Quản lý trạng thái ứng dụng.
+- `public/`: Chứa các tài nguyên tĩnh như hình ảnh.
+- `utils/`: Các tiện ích và hàm hỗ trợ.
 
-## Deploy on Vercel
+## 6. Yêu cầu hệ thống
+- Node.js >= 14.x
+- npm hoặc yarn
+- Trình duyệt hiện đại (Chrome, Firefox, Edge)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## 7. Thông tin bổ sung
+- [Tài liệu Next.js](https://nextjs.org/docs)
+- Người đóng góp: Nhóm phát triển dự án Elearning
+- Lưu ý khi deploy: Sử dụng [Vercel](https://vercel.com/) để triển khai nhanh chóng và dễ dàng.

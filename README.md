@@ -1,4 +1,4 @@
-# E-Learning Website with AI doubt assistance support
+# E-Learning Website with AI Doubt Assistance Support
 
 This full-stack E-learning website allows tutors to upload courses and students to purchase them. Students can get doubt support by asking questions in a Q&A forum or through an AI assistant. The AI is trained on course transcripts to provide accurate answers specifically related to the course material. The website also offers real-time analytics for course insights and DRM protection for video content.
 
@@ -6,44 +6,138 @@ Check link - https://elearning-front-end.vercel.app/
 
 ## 🔋Core Features
 
-1.  Real-time student course purchase analytics on the admin dashboard.
-2.  Upload video of the course and generate its transcript.
-3.  Use the transcript of the video to train and fine tune the AI model.
-4.  Student QNA , course purchase and review instant notification on Admin Dashboard.
+1. Real-time student course purchase analytics on the admin dashboard.
+2. Upload video of the course and generate its transcript.
+3. Use the transcript of the video to train and fine-tune the AI model.
+4. Student QNA, course purchase, and review instant notification on Admin Dashboard.
 
-## 👉Project Screen Shots -
+## Functionality: Analyze User Management
 
-### E-learning AI BOT🤖 -![ASKAI](https://github.com/yghugardare/Elearning/assets/117991996/28c98cab-d59e-47bd-a7be-236be0afabc9)
+### Frontend
+- **User Interaction**: Users can register, log in, update their profiles, and manage their accounts.
+- **API Calls**:
+  - Registration: Sends a POST request to `/registration` with user details.
+  - Login: Sends a POST request to `/login` with email and password.
+  - Profile Update: Sends a PUT request to `/update-user-info` with updated user details.
+  - Password Update: Sends a PUT request to `/update-user-password` with old and new passwords.
 
-![EnterVideoName](https://github.com/yghugardare/Elearning/assets/117991996/fc4e52e0-c735-48e7-8a1b-ffe70d7698ea)
-With video transcript -
-![withTrs](https://github.com/yghugardare/Elearning/assets/117991996/72e3a468-5f13-4025-9a3d-aa35610ba450)
-without transcript in light mode[just to show ui🌞] -
-![w/otrs](https://github.com/yghugardare/Elearning/assets/117991996/7815ad92-59bf-417f-bf65-d42beda142d5)
+### Backend
+- **Request Handling**:
+  - Registration: Validates email uniqueness, generates an activation token, and sends an activation email.
+  - Login: Verifies user credentials and generates access/refresh tokens.
+  - Profile Update: Updates user details in the database.
+  - Password Update: Validates the old password and updates the new password securely.
+- **Middleware**: Authentication and role-based authorization are applied to secure endpoints.
 
-### Upload video to AI ⬆️-
+### Database
+- **Collections**:
+  - `users`: Stores user details, including name, email, hashed password, avatar, and roles.
+  - **Fields**: `name`, `email`, `password`, `avatar`, `role`, `isVerified`.
 
-![addToAi](https://github.com/yghugardare/Elearning/assets/117991996/5b0a643d-6c27-4416-9ab6-533082bad44b)
-Video to Transcript , Transcript sent to model
-![trs](https://github.com/yghugardare/Elearning/assets/117991996/5af55374-79f4-4b2a-8233-3e8c243b2a8b)
+---
 
-### Real Time Analytics 📈-
+## Functionality: Analyze Course Management
 
-Order,Course and User Analytics [*used Re-charts*]-
-![order](https://github.com/yghugardare/Elearning/assets/117991996/fae6490f-60b4-4816-b362-00ff3b9f25bb)
-![c ourse](https://github.com/yghugardare/Elearning/assets/117991996/2e46a18d-98a8-42dc-9f22-d7851ccbdfa0)
-![user](https://github.com/yghugardare/Elearning/assets/117991996/ae648336-6729-4a99-b7df-7317e61757eb)
+### Frontend
+- **User Interaction**: Admins can create, edit, and delete courses. Users can view course details and access purchased courses.
+- **API Calls**:
+  - Create Course: Sends a POST request to `/create-course` with course details.
+  - Edit Course: Sends a PUT request to `/edit-course/:id` with updated course details.
+  - Delete Course: Sends a DELETE request to `/delete-course/:id`.
+  - View Courses: Sends a GET request to `/get-courses` to fetch all courses.
+  - View Course Details: Sends a GET request to `/get-course/:id`.
 
-### Instant Notification🔔 -
+### Backend
+- **Request Handling**:
+  - Create Course: Uploads course data, including thumbnails, and saves it to the database.
+  - Edit Course: Updates course details and handles thumbnail updates.
+  - Delete Course: Removes the course from the database and clears related cache.
+  - View Courses: Fetches all courses with limited details for performance.
+  - View Course Details: Fetches detailed information about a specific course.
+- **Middleware**: Authentication and admin role authorization are applied to secure endpoints.
 
-![notif](https://github.com/yghugardare/Elearning/assets/117991996/65eca2e6-052b-418a-b16a-c574a09e3f61)
+### Database
+- **Collections**:
+  - `courses`: Stores course details, including name, description, price, and content.
+  - **Fields**: `name`, `description`, `categories`, `price`, `thumbnail`, `tags`, `level`, `reviews`, `courseData`.
+
+---
+
+## Functionality: Analyze Order Management
+
+### Frontend
+- **User Interaction**: Users can purchase courses and view their order history. Admins can view all orders.
+- **API Calls**:
+  - Create Order: Sends a POST request to `/create-order` with course ID and payment information.
+  - View Orders: Sends a GET request to `/get-orders` to fetch all orders (admin only).
+  - Payment Intent: Sends a POST request to `/payment` with the payment amount.
+  - Retrieve Stripe Key: Sends a GET request to `/payment/stripepublishablekey`.
+
+### Backend
+- **Request Handling**:
+  - Create Order: Validates the course and user, processes the order, and sends a confirmation email.
+  - View Orders: Fetches all orders for admin users.
+  - Payment Intent: Handles payment processing (currently mocked).
+  - Retrieve Stripe Key: Returns the Stripe publishable key for frontend integration.
+- **Middleware**: Authentication and admin role authorization are applied to secure endpoints.
+
+### Database
+- **Collections**:
+  - `orders`: Stores order details, including course ID, user ID, and payment information.
+  - **Fields**: `courseId`, `userId`, `payment_info`.
+
+---
+
+## Functionality: Analyze Notifications
+
+### Frontend
+- **User Interaction**: Admins can view notifications and mark them as read.
+- **API Calls**:
+  - Fetch Notifications: Sends a GET request to `/get-all-notifications` to retrieve all notifications.
+  - Update Notification Status: Sends a PUT request to `/update-notification/:id` to mark a notification as read.
+
+### Backend
+- **Request Handling**:
+  - Fetch Notifications: Retrieves all notifications sorted by creation date.
+  - Update Notification Status: Marks a notification as "read" and updates the database.
+  - Scheduled Cleanup: Deletes notifications older than 30 days using a cron job.
+- **Middleware**: Authentication and admin role authorization are applied to secure endpoints.
+
+### Database
+- **Collections**:
+  - `notifications`: Stores notification details, including title, message, status, and user ID.
+  - **Fields**: `title`, `message`, `status`, `userId`.
+
+---
+
+## Functionality: Analyze Analytics
+
+### Frontend
+- **User Interaction**: Admins can view analytics data for users, orders, and courses.
+- **API Calls**:
+  - Fetch User Analytics: Sends a GET request to `/get-users-analytics` to retrieve user data for the last 12 months.
+  - Fetch Order Analytics: Sends a GET request to `/get-orders-analytics` to retrieve order data for the last 12 months.
+  - Fetch Course Analytics: Sends a GET request to `/get-courses-analytics` to retrieve course data for the last 12 months.
+
+### Backend
+- **Request Handling**:
+  - Fetch User Analytics: Uses the `generateLast12MothsData` utility to calculate user data.
+  - Fetch Order Analytics: Uses the `generateLast12MothsData` utility to calculate order data.
+  - Fetch Course Analytics: Uses the `generateLast12MothsData` utility to calculate course data.
+- **Middleware**: Authentication and admin role authorization are applied to secure endpoints.
+
+### Database
+- **Collections**:
+  - `users`, `orders`, `courses`: These collections are queried to generate analytics data.
+
+---
 
 ## 🎯Problem It Solves
 
 - Empowers students with multiple channels for resolving doubts and deepening course understanding.
 - Provides teachers with an AI-powered tool to manage questions and offer more personalized support.
 - Offers analytics to help instructors track student progress and identify areas for improvement.
-- Protects Tutors content rights by providing **DMR[Digital Media Rights]** Encryption.
+- Protects Tutors' content rights by providing **DMR[Digital Media Rights]** Encryption.
 
 ## ⚙️Tech Stack
 
