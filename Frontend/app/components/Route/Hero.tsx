@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 type Props = {};
 
 const Hero: FC<Props> = (props) => {
-  const { data,isLoading } = useGetHeroDataQuery("Banner", {});
+  const { data, isLoading } = useGetHeroDataQuery("Banner", {});
   const [search,setSearch] = useState("");
   const router = useRouter()
   

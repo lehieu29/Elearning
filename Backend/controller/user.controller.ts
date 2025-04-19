@@ -40,12 +40,21 @@ export const registrationUser = CatchAsyncError(
       if (isEmailExist) {
         return next(new ErrorHandler("Email already exists", 400));
       }
+      // TODO: Test
+
       // get user in object
-      const user: IRegistrationBody = {
+      /*const user: IRegistrationBody = {
         name,
         email,
         password,
-      };
+      };*/
+
+      const user = await userModel.create({
+        name,
+        email,
+        password,
+      });
+
       // create activation token
       const activationToken = createActivationToken(user);
 
@@ -64,12 +73,13 @@ export const registrationUser = CatchAsyncError(
 
       // send the mail
       try {
-        await sendMail({
+        // TODO: Test
+        /*await sendMail({
           email: user.email,
           subject: "Activate your account",
           template: "activation-mail.ejs",
           data,
-        });
+        });*/
         res.status(201).json({
           success: true,
           message: `Please check your email: ${user.email} to activate your account!`,

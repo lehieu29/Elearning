@@ -1,0 +1,571 @@
+[
+  {
+    "thumbnail": {
+      "public_id": "courses/q9aorhkyllo6yafzrhen",
+      "url": "https://res.cloudinary.com/dlnruqp9u/image/upload/v1709747135/courses/q9aorhkyllo6yafzrhen.jpg"
+    },
+    "name": "Z3 Demo 2",
+    "description": "NO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\nNO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\nNO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\nNO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\nNO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\nNO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\nThis is a Nextjs 14 course",
+    "categories": "Nextjs",
+    "price": 5,
+    "estimatedPrice": 100,
+    "tags": "React,NextJS",
+    "level": "Beginner",
+    "demoUrl": "1bc68ca47efc4f0e969c4f49bd048bd0",
+    "benefits": [
+      {
+        "title": "Learn next js"
+      },
+      {
+        "title": "Learn frontend + backend "
+      },
+      {
+        "title": "Learn Databases"
+      }
+    ],
+    "prerequisites": [
+      {
+        "title": "Basic Html, css and Js KNOWLEDGE"
+      },
+      {
+        "title": "Basic React Knowledge"
+      }
+    ],
+    "courseData": [
+      {
+        "title": "what is next js?",
+        "videoSection": "Intro",
+        "description": "In publishing and graphic design, Lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is available.",
+        "videoLength": 5
+      },
+      {
+        "title": "Nextjs plan",
+        "videoSection": "Intro",
+        "description": "In publishing and graphic design, Lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is available.",
+        "videoLength": 10
+      },
+      {
+        "title": "Routing in next js",
+        "videoSection": "Section 2",
+        "description": "In publishing and graphic design, Lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is available.",
+        "videoLength": 10
+      },
+      {
+        "title": "App Router",
+        "videoSection": "Section 2",
+        "description": "1bc68ca47efc4f0e969c4f49bd048bd0iqdhioqdshiqedoqed ioqwdiohd iodw1bc68ca47efc4f0e969c4f49bd048bd0",
+        "videoLength": 50
+      }
+    ],
+    "ratings": 4,
+    "purchased": 10,
+    "reviews": [
+      {
+        "user": {
+          "name": "Dummy User",
+          "email": "ralewox778@fashlend.com",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {}
+          ],
+          "createdAt": "2024-03-06T17:50:33.347Z",
+          "updatedAt": "2024-03-06T17:50:33.347Z"
+        },
+        "rating": 3,
+        "comment": "Pretty good course!",
+        "commentReplies": [],
+        "createdAt": "2024-03-06T18:57:17.231Z",
+        "updatedAt": "2024-03-06T18:57:17.231Z"
+      },
+      {
+        "user": {
+          "name": "Dhiraj Chaudhari`",
+          "email": "222dhiraj2001@sjcem.edu.in",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {}
+          ],
+          "createdAt": "2024-10-25T22:09:25.648Z",
+          "updatedAt": "2024-10-25T22:09:25.648Z"
+        },
+        "rating": 5,
+        "comment": "test",
+        "commentReplies": [],
+        "createdAt": "2024-10-25T22:23:10.510Z",
+        "updatedAt": "2024-10-25T22:23:10.510Z"
+      }
+    ],
+    "createdAt": "2024-03-06T17:45:34.933Z",
+    "updatedAt": "2025-04-17T15:12:22.833Z"
+  },
+  {
+    "thumbnail": {
+      "public_id": "courses/gimuvgtamftja8gmdie0",
+      "url": "https://res.cloudinary.com/dlnruqp9u/image/upload/v1709829826/courses/gimuvgtamftja8gmdie0.png"
+    },
+    "name": "Z2 Demo 3",
+    "description": "NO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\nNO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE \nNO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\nNO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\nNO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSENO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSENO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSENO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSENO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSENO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSENO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\n\n\ndbwujwkdf jikgdhwsaikujjkdwhcgf adujkwcsgujhkwghuj hjgwfdhjugujcf jkgdwufkg ujkdghqwcujqgerdgedgdgdhdjghdaujhgqdaujgqduajgudqgyudtgquitgdqutgdqutgyqdugdqh ujgdyhjqgj",
+    "categories": "Expressjs",
+    "price": 10,
+    "estimatedPrice": 999,
+    "tags": "Python",
+    "level": "Beginner",
+    "demoUrl": "1bc68ca47efc4f0e969c4f49bd048bd0",
+    "benefits": [
+      {
+        "title": "you will get good placement"
+      },
+      {
+        "title": "you will learn  programing"
+      }
+    ],
+    "prerequisites": [
+      {
+        "title": "will to learn"
+      }
+    ],
+    "courseData": [
+      {
+        "title": "Introduction",
+        "videoSection": "Chapter 1",
+        "description": "hdiwohqe jkdhikqh sdjkdsjkd holder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is availableholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before the final copy is available",
+        "videoLength": 10
+      },
+      {
+        "title": "basics",
+        "videoSection": "Chapter 1",
+        "description": "1bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd0",
+        "videoLength": 5
+      },
+      {
+        "title": "condition",
+        "videoSection": "chapter 2",
+        "description": "1bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd0",
+        "videoLength": 5
+      }
+    ],
+    "ratings": 4,
+    "purchased": 2,
+    "reviews": [
+      {
+        "user": {
+          "name": "deepak",
+          "email": "dghugar@gmail.com",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {}
+          ],
+          "createdAt": "2024-03-07T16:36:17.919Z",
+          "updatedAt": "2024-03-07T16:36:17.919Z"
+        },
+        "rating": 4,
+        "comment": "good",
+        "commentReplies": [],
+        "createdAt": "2024-03-07T16:51:25.634Z",
+        "updatedAt": "2024-03-07T16:51:25.634Z"
+      }
+    ],
+    "createdAt": "2024-03-07T16:43:48.010Z",
+    "updatedAt": "2024-03-31T03:04:54.602Z"
+  },
+  {
+    "thumbnail": {
+      "public_id": "courses/wt89lvgbly7vjefgm7ak",
+      "url": "https://res.cloudinary.com/dlnruqp9u/image/upload/v1711814399/courses/wt89lvgbly7vjefgm7ak.png"
+    },
+    "name": "Z1 demo 4",
+    "description": "NO VIDEO AVAILABLE\nONLY FOR TESTING PURPOSE\n\n1bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd0",
+    "categories": "Frontend",
+    "price": 100,
+    "estimatedPrice": 70,
+    "tags": "Frontend",
+    "level": "Expert",
+    "demoUrl": "1bc68ca47efc4f0e969c4f49bd048bd0",
+    "benefits": [
+      {
+        "title": "b1"
+      },
+      {
+        "title": "b2"
+      }
+    ],
+    "prerequisites": [
+      {
+        "title": "2"
+      },
+      {
+        "title": "qe"
+      }
+    ],
+    "courseData": [
+      {
+        "title": "JS1",
+        "videoSection": "Untitled Section",
+        "description": "1bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd0",
+        "videoLength": 20
+      },
+      {
+        "title": "JS-2",
+        "videoSection": "Untitled Section",
+        "description": "1bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd0",
+        "videoLength": 70
+      },
+      {
+        "title": "JS-4",
+        "videoSection": "Section2",
+        "description": "1bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd01bc68ca47efc4f0e969c4f49bd048bd0",
+        "videoLength": 29
+      }
+    ],
+    "ratings": 0,
+    "purchased": 3,
+    "reviews": [],
+    "createdAt": "2024-03-30T16:00:00.205Z",
+    "updatedAt": "2025-03-11T07:30:44.870Z"
+  },
+  {
+    "thumbnail": {
+      "public_id": "courses/fp2hyyvvvabrcllgh7n8",
+      "url": "https://res.cloudinary.com/dlnruqp9u/image/upload/v1711830664/courses/fp2hyyvvvabrcllgh7n8.webp"
+    },
+    "name": "Java ",
+    "description": "\n\n**Data Structures and Algorithms: The Foundation of Efficient Programming**\n\nData Structures and Algorithms (DSA) form the backbone of how we organize, store, and work with data within computer programs. This course delves into the essential ways we manage information and the clever techniques (algorithms) we use to solve problems in the most efficient ways possible.\n\n**What You'll Learn**\n\n* **Core Data Structures:** Master the building blocks like arrays, linked lists, stacks, queues, trees, and graphs. Understand when and how to use them effectively.\n* **Algorithmic Thinking:** Develop the ability to break down problems and design step-by-step procedures for solving them.\n* **Time and Space Complexity:** Learn how to analyze the speed and memory usage of your code, making informed decisions about different solutions.\n* **Common Algorithms:**  Explore powerful techniques like sorting, searching, and graph traversal that are used throughout the software industry.\n\n**Why is DSA Important?**\n\n* **Interview Success:**  Top tech companies heavily focus on DSA skills during their interviews.\n* **Problem-Solving:** DSA gives you the tools to tackle complex computational problems.\n* **Optimized Code:** Write programs that run faster and use less memory.\n* **Scalable Systems:** Design software that handles large amounts of data gracefully.\n\n**Let's get started on your DSA journey!** \n",
+    "categories": "DSA",
+    "price": 3000,
+    "estimatedPrice": 5000,
+    "tags": "Sorting,Searching,Recursion",
+    "level": "Beginner",
+    "demoUrl": "eaa0e08b30194b808092f22c46a54278",
+    "benefits": [
+      {
+        "title": "Crack FAANG Interviews"
+      },
+      {
+        "title": "Improve Problem Solving Skills"
+      },
+      {
+        "title": "Improve Coding Skills"
+      }
+    ],
+    "prerequisites": [
+      {
+        "title": "Basic Programming Knowledge"
+      },
+      {
+        "title": "A strong will to learn"
+      }
+    ],
+    "courseData": [
+      {
+        "title": "Bubble Sort",
+        "videoSection": "Sorting",
+        "description": "\nSorting is the process of arranging data elements in a specific order, such as ascending or descending. This fundamental concept in computer science is essential for various tasks like making searches faster, organizing information for easier analysis, and producing cleaner output. Sorting algorithms use different techniques to achieve this rearrangement, each with its strengths and weaknesses in terms of speed and memory usage. Understanding how these algorithms work allows you to choose the most suitable one for your specific data-related problems.\n\n\nSorting is the process of arranging data elements in a specific order, such as ascending or descending. This fundamental concept in computer science is essential for various tasks like making searches faster, organizing information for easier analysis, and producing cleaner output. Sorting algorithms use different techniques to achieve this rearrangement, each with its strengths and weaknesses in terms of speed and memory usage. Understanding how these algorithms work allows you to choose the most suitable one for your specific data-related problems.",
+        "videoLength": 9
+      },
+      {
+        "title": "Selection Sort",
+        "videoSection": "Sorting",
+        "description": "\nSorting is the process of arranging data elements in a specific order, such as ascending or descending. This fundamental concept in computer science is essential for various tasks like making searches faster, organizing information for easier analysis, and producing cleaner output. Sorting algorithms use different techniques to achieve this rearrangement, each with its strengths and weaknesses in terms of speed and memory usage. Understanding how these algorithms work allows you to choose the most suitable one for your specific data-related problems.\nSorting is the process of arranging data elements in a specific order, such as ascending or descending. This fundamental concept in computer science is essential for various tasks like making searches faster, organizing information for easier analysis, and producing cleaner output. Sorting algorithms use different techniques to achieve this rearrangement, each with its strengths and weaknesses in terms of speed and memory usage. Understanding how these algorithms work allows you to choose the most suitable one for your specific data-related problems.\nSorting is the process of arranging data elements in a specific order, such as ascending or descending. This fundamental concept in computer science is essential for various tasks like making searches faster, organizing information for easier analysis, and producing cleaner output. Sorting algorithms use different techniques to achieve this rearrangement, each with its strengths and weaknesses in terms of speed and memory usage. Understanding how these algorithms work allows you to choose the most suitable one for your specific data-related problems.\nSorting is the process of arranging data elements in a specific order, such as ascending or descending. This fundamental concept in computer science is essential for various tasks like making searches faster, organizing information for easier analysis, and producing cleaner output. Sorting algorithms use different techniques to achieve this rearrangement, each with its strengths and weaknesses in terms of speed and memory usage. Understanding how these algorithms work allows you to choose the most suitable one for your specific data-related problems.\nSorting is the process of arranging data elements in a specific order, such as ascending or descending. This fundamental concept in computer science is essential for various tasks like making searches faster, organizing information for easier analysis, and producing cleaner output. Sorting algorithms use different techniques to achieve this rearrangement, each with its strengths and weaknesses in terms of speed and memory usage. Understanding how these algorithms work allows you to choose the most suitable one for your specific data-related problems.\nSorting is the process of arranging data elements in a specific order, such as ascending or descending. This fundamental concept in computer science is essential for various tasks like making searches faster, organizing information for easier analysis, and producing cleaner output. Sorting algorithms use different techniques to achieve this rearrangement, each with its strengths and weaknesses in terms of speed and memory usage. Understanding how these algorithms work allows you to choose the most suitable one for your specific data-related problems.",
+        "videoLength": 20
+      },
+      {
+        "title": "Linear Search",
+        "videoSection": "Searching",
+        "description": "AVAILABLE-\n\nSearching is the process of locating a particular item or piece of information within a data set. Whether you're looking for a specific file on your computer or trying to find a word in a document, search algorithms are what make it possible.  Different search algorithms exist, such as linear search (checking items one by one) or binary search (efficiently narrowing the search space), each with varying levels of efficiency depending on the size and organization of your data.  \n",
+        "videoLength": 19
+      },
+      {
+        "title": "Time and Space Complexity",
+        "videoSection": "BONUS",
+        "description": "AVAILABLE\nSearching is the process of locating a particular item or piece of information within a data set. Whether you're looking for a specific file on your computer or trying to find a word in a document, search algorithms are what make it possible.  Different search algorithms exist, such as linear search (checking items one by one) or binary search (efficiently narrowing the search space), each with varying levels of efficiency depending on the size and organization of your data.  \nSearching is the process of locating a particular item or piece of information within a data set. Whether you're looking for a specific file on your computer or trying to find a word in a document, search algorithms are what make it possible.  Different search algorithms exist, such as linear search (checking items one by one) or binary search (efficiently narrowing the search space), each with varying levels of efficiency depending on the size and organization of your data.  \nSearching is the process of locating a particular item or piece of information within a data set. Whether you're looking for a specific file on your computer or trying to find a word in a document, search algorithms are what make it possible.  Different search algorithms exist, such as linear search (checking items one by one) or binary search (efficiently narrowing the search space), each with varying levels of efficiency depending on the size and organization of your data.  \n",
+        "videoLength": 6
+      },
+      {
+        "title": "Binary Search",
+        "videoSection": "Advanced Searching",
+        "description": "Searching is the process of locating a particular item or piece of information within a data set. Whether you're looking for a specific file on your computer or trying to find a word in a document, search algorithms are what make it possible.  Different search algorithms exist, such as linear search (checking items one by one) or binary search (efficiently narrowing the search space), each with varying levels of efficiency depending on the size and organization of your data.  \nSearching is the process of locating a particular item or piece of information within a data set. Whether you're looking for a specific file on your computer or trying to find a word in a document, search algorithms are what make it possible.  Different search algorithms exist, such as linear search (checking items one by one) or binary search (efficiently narrowing the search space), each with varying levels of efficiency depending on the size and organization of your data.  \nSearching is the process of locating a particular item or piece of information within a data set. Whether you're looking for a specific file on your computer or trying to find a word in a document, search algorithms are what make it possible.  Different search algorithms exist, such as linear search (checking items one by one) or binary search (efficiently narrowing the search space), each with varying levels of efficiency depending on the size and organization of your data.  \nSearching is the process of locating a particular item or piece of information within a data set. Whether you're looking for a specific file on your computer or trying to find a word in a document, search algorithms are what make it possible.  Different search algorithms exist, such as linear search (checking items one by one) or binary search (efficiently narrowing the search space), each with varying levels of efficiency depending on the size and organization of your data.  \nSearching is the process of locating a particular item or piece of information within a data set. Whether you're looking for a specific file on your computer or trying to find a word in a document, search algorithms are what make it possible.  Different search algorithms exist, such as linear search (checking items one by one) or binary search (efficiently narrowing the search space), each with varying levels of efficiency depending on the size and organization of your data.  \n",
+        "videoLength": 8
+      },
+      {
+        "title": "Easy Set ",
+        "videoSection": "Questions",
+        "description": "3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc3a2341a1b0014c90b1ddc52b47d72dcc",
+        "videoLength": 66
+      },
+      {
+        "title": "Medium Set",
+        "videoSection": "Questions",
+        "description": "eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278eaa0e08b30194b808092f22c46a54278",
+        "videoLength": 9
+      }
+    ],
+    "ratings": 3.8333333333333335,
+    "purchased": 15,
+    "reviews": [
+      {
+        "user": {
+          "name": "Tom riddle",
+          "email": "riddle1512@gmail.com",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {},
+            {},
+            {},
+            {},
+            {}
+          ],
+          "createdAt": "2024-02-28T18:01:41.719Z",
+          "updatedAt": "2024-03-30T18:36:28.079Z"
+        },
+        "rating": 5,
+        "comment": "Amazing course",
+        "commentReplies": [],
+        "createdAt": "2024-03-30T21:44:59.699Z",
+        "updatedAt": "2024-03-30T21:44:59.699Z"
+      },
+      {
+        "user": {
+          "name": "Aditi Ghugardare",
+          "email": "aditighugardare@gmail.com",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {}
+          ],
+          "createdAt": "2024-03-31T04:32:04.437Z",
+          "updatedAt": "2024-03-31T04:32:04.437Z"
+        },
+        "rating": 4,
+        "comment": "Amazing ",
+        "commentReplies": [],
+        "createdAt": "2024-03-31T04:33:52.982Z",
+        "updatedAt": "2024-03-31T04:33:52.982Z"
+      },
+      {
+        "user": {
+          "name": "john doe",
+          "email": "nowetob180@shaflyn.com",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {}
+          ],
+          "createdAt": "2024-03-31T13:52:55.778Z",
+          "updatedAt": "2024-03-31T13:52:55.778Z"
+        },
+        "rating": 4,
+        "comment": "good course",
+        "commentReplies": [],
+        "createdAt": "2024-03-31T13:56:43.980Z",
+        "updatedAt": "2024-03-31T13:56:43.980Z"
+      },
+      {
+        "user": {
+          "name": "hritik",
+          "email": "popmsg6@gmail.com",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {}
+          ],
+          "createdAt": "2024-03-01T04:44:55.364Z",
+          "updatedAt": "2024-03-01T04:44:55.364Z"
+        },
+        "rating": 4,
+        "comment": "Fantastic ",
+        "commentReplies": [],
+        "createdAt": "2024-03-31T18:13:19.346Z",
+        "updatedAt": "2024-03-31T18:13:19.346Z"
+      },
+      {
+        "user": {
+          "name": "254_Sanskruti_Waskar",
+          "email": "sanskrutiwaskar24@gmail.com",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {}
+          ],
+          "createdAt": "2024-04-04T05:00:33.418Z",
+          "updatedAt": "2024-04-04T05:00:33.418Z"
+        },
+        "rating": 1,
+        "comment": "Good work",
+        "commentReplies": [],
+        "createdAt": "2024-04-04T05:01:55.180Z",
+        "updatedAt": "2024-04-04T05:01:55.180Z"
+      },
+      {
+        "user": {
+          "name": "Sanskruti",
+          "email": "sanskrutidt@gmail.com",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {}
+          ],
+          "createdAt": "2024-04-15T04:27:29.505Z",
+          "updatedAt": "2024-04-15T04:27:29.505Z"
+        },
+        "rating": 5,
+        "comment": "Very nice content",
+        "commentReplies": [],
+        "createdAt": "2024-04-15T04:29:24.375Z",
+        "updatedAt": "2024-04-15T04:29:24.375Z"
+      }
+    ],
+    "createdAt": "2024-03-30T20:31:04.829Z",
+    "updatedAt": "2024-10-25T22:24:21.570Z"
+  },
+  {
+    "thumbnail": {
+      "public_id": "courses/adpwbzohiwfbclezlnrw",
+      "url": "https://res.cloudinary.com/dlnruqp9u/image/upload/v1713251592/courses/adpwbzohiwfbclezlnrw.webp"
+    },
+    "name": "z4 demo",
+    "description": "his course provides an in-depth understanding of DevOps principles and practices, focusing on how to bridge the gap between development and operations teams to improve collaboration, productivity, and software quality. Participants will learn about the cultural shift required for successful DevOps adoption, as well as the tools and techniques used to automate the software delivery pipeline.This course provides an in-depth understanding of DevOps principles and practices, focusing on how to bridge the gap between development and operations teams to improve collaboration, productivity, and software quality. Participants will learn about the cultural shift required for successful DevOps adoption, as well as the tools and techniques used to automate the software delivery pipeline.This course provides an in-depth understanding of DevOps principles and practices, focusing on how to bridge the gap between development and operations teams to improve collaboration, productivity, and software quality. Participants will learn about the cultural shift required for successful DevOps adoption, as well as the tools and techniques used to automate the software delivery pipeline.This course provides an in-depth understanding of DevOps principles and practices, focusing on how to bridge the gap between development and operations teams to improve collaboration, productivity, and software quality. Participants will learn about the cultural shift required for successful DevOps adoption, as well as the tools and techniques used to automate the software delivery pipeline.This course provides an in-depth understanding of DevOps principles and practices, focusing on how to bridge the gap between development and operations teams to improve collaboration, productivity, and software quality. Participants will learn about the cultural shift required for successful DevOps adoption, as well as the tools and techniques used to automate the software delivery pipeline.This course provides an in-depth understanding of DevOps principles and practices, focusing on how to bridge the gap between development and operations teams to improve collaboration, productivity, and software quality. Participants will learn about the cultural shift required for successful DevOps adoption, as well as the tools and techniques used to automate the software delivery pipeline.This course provides an in-depth understanding of DevOps principles and practices, focusing on how to bridge the gap between development and operations teams to improve collaboration, productivity, and software quality. Participants will learn about the cultural shift required for successful DevOps adoption, as well as the tools and techniques used to automate the software delivery pipeline.This course provides an in-depth understanding of DevOps principles and practices, focusing on how to bridge the gap between development and operations teams to improve collaboration, productivity, and software quality. Participants will learn about the cultural shift required for successful DevOps adoption, as well as the tools and techniq\nues used to automate the software delivery pipeline.",
+    "categories": "mySql",
+    "price": 2000,
+    "estimatedPrice": 40000,
+    "tags": "devops",
+    "level": "begineer",
+    "demoUrl": "2c8d8a63e3ac48ac8a4e96d95c63ec8a",
+    "benefits": [
+      {
+        "title": "2c8d8a63e3ac48ac8a4e96d95c63ec8a"
+      },
+      {
+        "title": "rwr"
+      }
+    ],
+    "prerequisites": [
+      {
+        "title": "2c8d8a63e3ac48ac8a4e96d95c63ec8a"
+      }
+    ],
+    "courseData": [
+      {
+        "title": "2c8d8a63e3ac48ac8a4e96d95c63ec8a",
+        "videoSection": "Untitled Section",
+        "description": "2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a2c8d8a63e3ac48ac8a4e96d95c63ec8a",
+        "videoLength": 5
+      }
+    ],
+    "ratings": 0,
+    "purchased": 1,
+    "reviews": [],
+    "createdAt": "2024-04-16T07:13:13.096Z",
+    "updatedAt": "2024-05-31T05:58:05.017Z"
+  },
+  {
+    "thumbnail": {
+      "public_id": "courses/tpnkaiwoqpijo1kma4tz",
+      "url": "https://res.cloudinary.com/dlnruqp9u/image/upload/v1717085971/courses/tpnkaiwoqpijo1kma4tz.webp"
+    },
+    "name": "Data Structures and Algorithms in JS",
+    "description": "Ever wondered how websites and applications efficiently manage massive amounts of data? Or how they perform lightning-fast searches or complex calculations? The secret lies in DSA! DSA is the foundation of efficient programming, and learning it with JavaScript is a fantastic combination.\n\n\nData Structures: These are organized ways to store and access data. Imagine a toolbox with different compartments for screwdrivers, wrenches, and hammers. Data structures are like these compartments, allowing you to efficiently store different types of data (like numbers, text, or objects) and retrieve them quickly when needed. JavaScript offers built-in structures like arrays, objects, and lists, and DSA teaches you how to leverage them effectively.\n\nAlgorithms: These are step-by-step instructions for solving problems. Think of them as recipes for a program. Algorithms take data from your chosen data structures and manipulate it to achieve a desired outcome. DSA dives into various algorithms, like searching, sorting, and traversing, teaching you how to choose the right one for specific tasks. By understanding algorithm efficiency, you can write programs that run faster and use less memory.\n\nJavaScript is Everywhere:  From web development to mobile apps, JavaScript is a dominant force. By applying DSA to JavaScript, you'll write cleaner, more efficient code for any JavaScript projectJavaScript is Everywhere:  From web development to mobile apps, JavaScript is a dominant force. By applying DSA to JavaScript, you'll write cleaner, more efficient code for any JavaScript projectJavaScript is Everywhere:  From web development to mobile apps, JavaScript is a dominant force. By applying DSA to JavaScript, you'll write cleaner, more efficient code for any JavaScript project\n\n\n",
+    "categories": "DSA",
+    "price": 2000,
+    "estimatedPrice": 8000,
+    "tags": "JS,DSA,Problem Solving",
+    "level": "Intermediate",
+    "demoUrl": "e2d99e24114744e8baf359cbca8e518b",
+    "benefits": [
+      {
+        "title": "Get placement ready"
+      },
+      {
+        "title": "Learn Problem Solving Skils"
+      },
+      {
+        "title": "Will be able to crack FAANG complanies"
+      }
+    ],
+    "prerequisites": [
+      {
+        "title": "A strong will to learn"
+      },
+      {
+        "title": "Basic Programming Knowledge"
+      },
+      {
+        "title": "Must know JavaScript"
+      }
+    ],
+    "courseData": [
+      {
+        "title": "Linear Search",
+        "videoSection": "Searching",
+        "description": "DSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavo",
+        "videoLength": 10
+      },
+      {
+        "title": "Binary Search",
+        "videoSection": "Searching",
+        "description": "DSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavoDSA hones your problem-solving skills. You'll learn to break down complex challenges into smaller, manageable steps, a valuable asset in any coding endeavo",
+        "videoLength": 15
+      },
+      {
+        "title": "Algorithms",
+        "videoSection": "Basics",
+        "description": "211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4",
+        "videoLength": 13
+      },
+      {
+        "title": "Time and Space Complexity",
+        "videoSection": "Basics",
+        "description": "8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e",
+        "videoLength": null
+      },
+      {
+        "title": "Bubble Sort",
+        "videoSection": "Sorting",
+        "description": "211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4211ad3c7344d4140bd875dc40400e7e4",
+        "videoLength": 6
+      },
+      {
+        "title": "Merge Sort",
+        "videoSection": "Sorting",
+        "description": "8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e8051d22f829a4cd18ff587469fd99d9e",
+        "videoLength": 13
+      },
+      {
+        "title": "Quick Sort",
+        "videoSection": "Sorting",
+        "description": "e2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518be2d99e24114744e8baf359cbca8e518b",
+        "videoLength": 24
+      }
+    ],
+    "ratings": 1,
+    "purchased": 6,
+    "reviews": [
+      {
+        "user": {
+          "name": "hritik",
+          "email": "popmsg6@gmail.com",
+          "role": "user",
+          "isVerified": false,
+          "courses": [
+            {},
+            {},
+            {},
+            {}
+          ],
+          "createdAt": "2024-03-01T04:44:55.364Z",
+          "updatedAt": "2024-05-30T15:46:17.726Z"
+        },
+        "rating": 1,
+        "comment": "good course",
+        "commentReplies": [],
+        "createdAt": "2024-05-31T07:13:42.438Z",
+        "updatedAt": "2024-05-31T07:13:42.438Z"
+      }
+    ],
+    "createdAt": "2024-05-30T16:19:31.832Z",
+    "updatedAt": "2024-12-10T15:14:49.777Z"
+  }
+]

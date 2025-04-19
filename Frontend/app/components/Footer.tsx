@@ -16,7 +16,7 @@ const Footer = (props: Props) => {
               <li>
                 <Link
                   href="/about"
-                  className="text-base text-black dark:text-gray-300 dark:hover:text-white"
+                  className="hover:text-[#39c1f3] text-base text-black dark:text-gray-300 dark:hover:text-white"
                 >
                   Our Story
                 </Link>
@@ -24,7 +24,7 @@ const Footer = (props: Props) => {
               <li>
                 <Link
                   href="/privacy-policy"
-                  className="text-base text-black dark:text-gray-300 dark:hover:text-white"
+                  className="hover:text-[#39c1f3] text-base text-black dark:text-gray-300 dark:hover:text-white"
                 >
                   Privacy Policy
                 </Link>
@@ -32,7 +32,7 @@ const Footer = (props: Props) => {
               <li>
                 <Link
                   href="/faq"
-                  className="text-base text-black dark:text-gray-300 dark:hover:text-white"
+                  className="hover:text-[#39c1f3] text-base text-black dark:text-gray-300 dark:hover:text-white"
                 >
                   FAQ
                 </Link>
@@ -45,7 +45,7 @@ const Footer = (props: Props) => {
               <li>
                 <Link
                   href="/courses"
-                  className="text-base text-black dark:text-gray-300 dark:hover:text-white"
+                  className="hover:text-[#39c1f3] text-base text-black dark:text-gray-300 dark:hover:text-white"
                 >
                   Courses
                 </Link>
@@ -53,7 +53,7 @@ const Footer = (props: Props) => {
               <li>
                 <Link
                   href="/profile"
-                  className="text-base text-black dark:text-gray-300 dark:hover:text-white"
+                  className="hover:text-[#39c1f3] text-base text-black dark:text-gray-300 dark:hover:text-white"
                 >
                   My Account
                 </Link>
@@ -61,7 +61,7 @@ const Footer = (props: Props) => {
               <li>
                 <Link
                   href="/course-dashboard"
-                  className="text-base text-black dark:text-gray-300 dark:hover:text-white"
+                  className="hover:text-[#39c1f3] text-base text-black dark:text-gray-300 dark:hover:text-white"
                 >
                   Course Dashboard
                 </Link>
@@ -74,7 +74,7 @@ const Footer = (props: Props) => {
               <li>
                 <Link
                   href="https://www.youtube.com/"
-                  className="text-base text-black dark:text-gray-300 dark:hover:text-white"
+                  className="hover:text-[#39c1f3] text-base text-black dark:text-gray-300 dark:hover:text-white"
                 >
                   Youtube
                 </Link>
@@ -82,7 +82,7 @@ const Footer = (props: Props) => {
               <li>
                 <Link
                   href="https://www.instagram.com/"
-                  className="text-base text-black dark:text-gray-300 dark:hover:text-white"
+                  className="hover:text-[#39c1f3] text-base text-black dark:text-gray-300 dark:hover:text-white"
                 >
                   Instagram
                 </Link>
@@ -90,9 +90,9 @@ const Footer = (props: Props) => {
               <li>
                 <Link
                   href="https://www.github.com/"
-                  className="text-base text-black dark:text-gray-300 dark:hover:text-white"
+                  className="hover:text-[#39c1f3] text-base text-black dark:text-gray-300 dark:hover:text-white"
                 >
-                  github
+                  Github
                 </Link>
               </li>
             </ul>
@@ -100,22 +100,22 @@ const Footer = (props: Props) => {
           <div>
             <h3 className="text-[20px] font-[600] text-black dark:text-white pb-3">Contact Info</h3>
             <p className="text-base text-black dark:text-gray-300 dark:hover:text-white pb-2">
-            Call Us: +91 9373642448
+            Call: +84 977 379 673
             </p>
            
             <p className="text-base text-black dark:text-gray-300 dark:hover:text-white pb-2">
-            Address:Building Name, Flat-1102, Warje,Pune,Maharahtra , India
+            Address: 144 Xuan Thuy Street, Cau Giay District, Hanoi, Vietnam
             </p>
          
             <p className="text-base text-black dark:text-gray-300 dark:hover:text-white  pb-2">
-            Mail Us: begroup.project4@gmail.com
+            Mail: 19020545@vnu.edu.vn
             </p>
             
           </div>
         </div>
         <br />
         <p className="text-center text-black dark:text-white">
-          Copyright © 2023 ELearning | All Rights Reserved
+          Copyright © 2025 ELearning | All Rights Reserved
         </p>
       </div>
       <br />
