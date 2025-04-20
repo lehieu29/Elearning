@@ -8,23 +8,49 @@ import CourseModel from "../models/course.model";
 import { redis } from "../utils/redis";
 import mongoose from "mongoose";
 import path from "path";
+import os from "os";
 import ejs from "ejs";
 import sendMail from "../utils/sendMail";
 import NotificationModel from "../models/notification.model";
 import axios from "axios";
 import { AIModel } from "../models/ai.model";
+import { processVideoAndGenerateSubtitlesOptimized, cleanupTempFiles } from "../services/subtitle.service";
 
 // upload video handler
 export const uploadVideoHandler = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
+    // Thời gian bắt đầu
+    const startTime = Date.now();
+
+    // Theo dõi tiến độ
+    let lastProgressUpdate = 0;
+    let lastMessage = '';
+
+    // Hàm cập nhật trạng thái xử lý
+    const updateProcessStatus = (uploadId: string, progress: number, message: string) => {
+      // Giới hạn cập nhật quá nhiều lần
+      const now = Date.now();
+      if (now - lastProgressUpdate < 1000 && message === lastMessage) {
+        return;
+      }
+
+      lastProgressUpdate = now;
+      lastMessage = message;
+
+      // Trong môi trường thực tế, bạn có thể lưu trạng thái vào Redis hoặc database
+      console.log(`[${uploadId}] ${progress}%: ${message}`);
+    };
+
     try {
       const file = req.file;
-
       if (!file) {
         return next(new ErrorHandler(`No file uploaded`, 400));
       }
 
-      console.log(`Processing file: ${file.originalname}, Size: ${file.size}, Type: ${file.mimetype}`);
+      // Tạo ID xử lý duy nhất
+      const processId = `vid_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      console.log(`[${processId}] Processing file: ${file.originalname}, Size: ${file.size}, Type: ${file.mimetype}`);
 
       // Kiểm tra file tồn tại trên disk
       const filePath = file.path;
@@ -38,27 +64,21 @@ export const uploadVideoHandler = CatchAsyncError(
         return next(new ErrorHandler(`File is empty (0 bytes)`, 400));
       }
 
-      console.log(`File verified on disk: ${filePath}, Size: ${stats.size} bytes`);
+      console.log(`[${processId}] File verified on disk: ${filePath}, Size: ${stats.size} bytes`);
 
-      // Thực hiện upload lên Cloudinary với timeout dài hơn
-      const result = await cloudinary.v2.uploader.upload(filePath, {
-        resource_type: "video",
-        folder: "courses/videos",
-        timeout: 600000, // 10 phút timeout
-      });
+      // Xác định loại nội dung video
+      const contentType = req.body.contentType || 'lecture';
 
-      console.log(`Cloudinary upload success: ${result.public_id}`);
-
-      // Xóa file tạm sau khi upload thành công
-      fs.unlinkSync(filePath);
-
-      res.status(200).json({
+      // Thông báo đang xử lý video
+      res.status(202).json({
         success: true,
-        videoUrl: result.secure_url,
-        publicId: result.public_id,
-        duration: result.duration,
-        format: result.format,
+        message: 'Video uploaded, generating subtitles and processing. Please wait...',
+        processId: processId,
       });
+
+      // Xử lý video bất đồng bộ
+      processVideoAsync(processId, filePath, contentType);
+
     } catch (error: any) {
       console.error(`Video upload error: ${error.message}`);
 
@@ -72,6 +92,136 @@ export const uploadVideoHandler = CatchAsyncError(
         }
       }
 
+      return next(new ErrorHandler(error.message, 500));
+    }
+
+    // Hàm xử lý video bất đồng bộ
+    async function processVideoAsync(processId: string, filePath: string, contentType: string) {
+      // Đường dẫn tạm thời cho các file xử lý
+      const tempDir = path.join(os.tmpdir(), 'video-processing', processId);
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      try {
+        // 1. Tạo phụ đề và gắn vào video
+        updateProcessStatus(processId, 5, 'Bắt đầu xử lý video và tạo phụ đề...');
+
+        const { outputVideoPath } = await processVideoAndGenerateSubtitlesOptimized(
+          filePath,
+          { contentType },
+          (progress, message) => {
+            updateProcessStatus(processId, progress, message);
+          }
+        );
+
+        // 2. Upload video có phụ đề lên Cloudinary
+        updateProcessStatus(processId, 98, 'Đang tải video lên Cloudinary...');
+
+        const result = await cloudinary.v2.uploader.upload(outputVideoPath, {
+          resource_type: "video",
+          folder: "courses/videos",
+          timeout: 600000, // 10 phút timeout
+        });
+
+        updateProcessStatus(processId, 100, 'Hoàn thành xử lý và tải lên!');
+
+        console.log(`[${processId}] Cloudinary upload success: ${result.public_id}`);
+
+        // 3. Lưu kết quả vào database/cache (để frontend có thể truy vấn sau)
+        // Trong môi trường thực tế, bạn có thể lưu vào Redis hoặc database
+        // Ví dụ: await redis.set(`video_process:${processId}`, JSON.stringify({
+        //   success: true,
+        //   videoUrl: result.secure_url,
+        //   publicId: result.public_id,
+        //   duration: result.duration,
+        //   format: result.format,
+        // }));
+
+        // 4. Dọn dẹp files
+        cleanupTempFiles([filePath, tempDir]);
+
+        // 5. Tính toán thời gian xử lý
+        const processingTime = (Date.now() - startTime) / 1000;
+        console.log(`[${processId}] Total processing time: ${processingTime.toFixed(2)} seconds`);
+
+      } catch (processingError: any) {
+        console.error(`[${processId}] Video processing error: ${processingError.message}`);
+        updateProcessStatus(processId, 50, `Gặp lỗi khi xử lý: ${processingError.message}`);
+
+        // Nếu xử lý phụ đề thất bại, vẫn upload video gốc lên Cloudinary
+        try {
+          updateProcessStatus(processId, 60, 'Đang tải video gốc lên Cloudinary...');
+
+          const result = await cloudinary.v2.uploader.upload(filePath, {
+            resource_type: "video",
+            folder: "courses/videos",
+            timeout: 600000,
+          });
+
+          updateProcessStatus(processId, 100, 'Đã tải lên video gốc (không có phụ đề)');
+
+          console.log(`[${processId}] Fallback upload success: ${result.public_id}`);
+
+          // Lưu kết quả với cảnh báo
+          // await redis.set(`video_process:${processId}`, JSON.stringify({
+          //   success: true,
+          //   videoUrl: result.secure_url,
+          //   publicId: result.public_id,
+          //   duration: result.duration,
+          //   format: result.format,
+          //   warning: 'Video uploaded without subtitles due to processing error'
+          // }));
+
+          // Dọn dẹp file tạm
+          cleanupTempFiles([filePath, tempDir]);
+
+        } catch (fallbackError: any) {
+          console.error(`[${processId}] Fallback upload error: ${fallbackError.message}`);
+          updateProcessStatus(processId, 100, `Thất bại hoàn toàn: ${fallbackError.message}`);
+
+          // Lưu thông tin lỗi
+          // await redis.set(`video_process:${processId}`, JSON.stringify({
+          //   success: false,
+          //   error: `Failed to process video: ${processingError.message}`,
+          //   fallbackError: fallbackError.message
+          // }));
+
+          // Dọn dẹp file tạm
+          cleanupTempFiles([filePath, tempDir]);
+        }
+      }
+    }
+  }
+);
+
+// Endpoint mới để kiểm tra trạng thái xử lý
+export const checkProcessingStatus = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { processId } = req.params;
+
+      if (!processId) {
+        return next(new ErrorHandler('Process ID is required', 400));
+      }
+
+      // Trong môi trường thực tế, truy vấn Redis hoặc database
+      // const processInfo = await redis.get(`video_process:${processId}`);
+
+      // Giả định đang sử dụng zmq hoặc socketio cho updates thực tế
+
+      // Mô phỏng
+      const processInfo = {
+        status: 'processing',
+        progress: 50,
+        message: 'Xử lý đang tiếp tục...'
+      };
+
+      res.status(200).json({
+        success: true,
+        processInfo
+      });
+    } catch (error: any) {
       return next(new ErrorHandler(error.message, 500));
     }
   }
