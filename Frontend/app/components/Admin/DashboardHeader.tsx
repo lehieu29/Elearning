@@ -24,7 +24,7 @@ const DashboardHeader: FC<Props> = ({ open, setOpen }) => {
     useUpdateNotificationStatusMutation();
   const [notifications, setNotifications] = useState<any>([]);
   const [audio] = useState<any>(
-    new Audio("/client/app/components/Admin/Notification.mp3")
+    new Audio("/Frontend/app/components/Admin/Notification.mp3")
   );
 
   const playNotificationSound = () => {

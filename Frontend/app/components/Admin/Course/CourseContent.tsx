@@ -54,8 +54,6 @@ const CourseContent: FC<Props> = ({
       item.title === "" ||
       item.description === "" ||
       item.videoUrl === "" ||
-      item.links[0].title === "" ||
-      item.links[0].url === "" ||
       item.videoLength === ""
     ) {
       toast.error("Please fill all the fields first!");
@@ -88,9 +86,7 @@ const CourseContent: FC<Props> = ({
     if (
       courseContentData[courseContentData.length - 1].title === "" ||
       courseContentData[courseContentData.length - 1].description === "" ||
-      courseContentData[courseContentData.length - 1].videoUrl === "" ||
-      courseContentData[courseContentData.length - 1].links[0].title === "" ||
-      courseContentData[courseContentData.length - 1].links[0].url === ""
+      courseContentData[courseContentData.length - 1].videoUrl === ""
     ) {
       toast.error("Please fill all the fields first!");
     } else {
@@ -115,9 +111,7 @@ const CourseContent: FC<Props> = ({
     if (
       courseContentData[courseContentData.length - 1].title === "" ||
       courseContentData[courseContentData.length - 1].description === "" ||
-      courseContentData[courseContentData.length - 1].videoUrl === "" ||
-      courseContentData[courseContentData.length - 1].links[0].title === "" ||
-      courseContentData[courseContentData.length - 1].links[0].url === ""
+      courseContentData[courseContentData.length - 1].videoUrl === ""
     ) {
       toast.error("section can't be empty!");
     } else {
@@ -276,7 +270,7 @@ const CourseContent: FC<Props> = ({
                       />
                       <br />
                     </div>
-                    {item?.links.map((link: any, linkIndex: number) => (
+                    {/*item?.links.map((link: any, linkIndex: number) => (
                       <div className="mb-3 block" key={linkIndex}>
                         <div className="w-full flex items-center justify-between">
                           <label className={styles.label}>
@@ -320,10 +314,10 @@ const CourseContent: FC<Props> = ({
                           }}
                         />
                       </div>
-                    ))}
-                    <br />
+                    ))*/}
+                    
                     {/* add link button */}
-                    <div className="inline-block mb-4">
+                    <div className="hidden inline-block mb-4">
                       <p
                         className="flex items-center text-[18px] dark:text-white text-black cursor-pointer"
                         onClick={() => handleAddLink(index)}
