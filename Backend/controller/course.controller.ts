@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/ErrorHandler";
 import cloudinary from "cloudinary";
-import { url } from "inspector";
+import fs from "fs";  // Thêm import này
 import { createCourse, getAllCoursesService } from "../services/course.service";
 import CourseModel from "../models/course.model";
 import { redis } from "../utils/redis";
@@ -13,6 +13,70 @@ import sendMail from "../utils/sendMail";
 import NotificationModel from "../models/notification.model";
 import axios from "axios";
 import { AIModel } from "../models/ai.model";
+
+// upload video handler
+export const uploadVideoHandler = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const file = req.file;
+
+      if (!file) {
+        return next(new ErrorHandler(`No file uploaded`, 400));
+      }
+
+      console.log(`Processing file: ${file.originalname}, Size: ${file.size}, Type: ${file.mimetype}`);
+
+      // Kiểm tra file tồn tại trên disk
+      const filePath = file.path;
+      if (!fs.existsSync(filePath)) {
+        return next(new ErrorHandler(`File was not properly saved to disk: ${filePath}`, 500));
+      }
+
+      // Kiểm tra kích thước file thực tế
+      const stats = fs.statSync(filePath);
+      if (stats.size === 0) {
+        return next(new ErrorHandler(`File is empty (0 bytes)`, 400));
+      }
+
+      console.log(`File verified on disk: ${filePath}, Size: ${stats.size} bytes`);
+
+      // Thực hiện upload lên Cloudinary với timeout dài hơn
+      const result = await cloudinary.v2.uploader.upload(filePath, {
+        resource_type: "video",
+        folder: "courses/videos",
+        timeout: 600000, // 10 phút timeout
+      });
+
+      console.log(`Cloudinary upload success: ${result.public_id}`);
+
+      // Xóa file tạm sau khi upload thành công
+      fs.unlinkSync(filePath);
+
+      res.status(200).json({
+        success: true,
+        videoUrl: result.secure_url,
+        publicId: result.public_id,
+        duration: result.duration,
+        format: result.format,
+      });
+    } catch (error: any) {
+      console.error(`Video upload error: ${error.message}`);
+
+      // Cleanup file if exists and upload failed
+      if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+          console.log(`Cleaned up temp file: ${req.file.path}`);
+        } catch (cleanupError: any) {
+          console.error(`Failed to clean up temp file: ${cleanupError.message}`);
+        }
+      }
+
+      return next(new ErrorHandler(error.message, 500));
+    }
+  }
+);
+
 // upload course
 export const uploadCourse = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {

@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { AiOutlineDelete, AiOutlinePlusCircle } from "react-icons/ai";
 import { BsLink45Deg, BsPencil } from "react-icons/bs";
 import { MdOutlineKeyboardArrowDown } from "react-icons/md";
+import { useUploadVideoMutation } from "@/redux/features/courses/coursesApi";
 
 type Props = {
   active: number;
@@ -26,6 +27,9 @@ const CourseContent: FC<Props> = ({
   );
 
   const [activeSection, setActiveSection] = useState(1);
+  const [uploadVideo, { isLoading, isSuccess, error }] = useUploadVideoMutation();
+  const [currentUploadIndex, setCurrentUploadIndex] = useState(-1);
+  const [uploadedFileNames, setUploadedFileNames] = useState(Array(courseContentData.length).fill(""));
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
@@ -49,12 +53,72 @@ const CourseContent: FC<Props> = ({
     setCourseContentData(updatedData);
   };
 
+  const handleVideoUpload = (file: File, index: number) => {
+    if (!file) return;
+
+    // Log information for debugging
+    console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+    // Check file size and format
+    if (file.size === 0) {
+      toast.error("File is empty, please select another file", { duration: 4000 });
+      return;
+    }
+
+    if (!file.type.startsWith('video/')) {
+      toast.error("Please select a valid video file", { duration: 4000 });
+      return;
+    }
+
+    // Update uploading status
+    setCurrentUploadIndex(index);
+
+    // Update the file name for this index
+    const updatedFileNames = [...uploadedFileNames];
+    updatedFileNames[index] = file.name;
+    setUploadedFileNames(updatedFileNames);
+
+    // Show loading toast (max 10 seconds)
+    const loadingToast = toast.loading("Uploading video...", { duration: 10000 });
+
+    uploadVideo(file)
+      .unwrap()
+      .then((result) => {
+        console.log('Upload successful:', result);
+        toast.dismiss(loadingToast);
+        toast.success("Video uploaded successfully!", { duration: 3000 });
+
+        // Update the videoUrl with the publicId from the response
+        const updatedData = [...courseContentData];
+        updatedData[index].videoUrl = result.publicId;
+
+        // Calculate video length in minutes from duration (in seconds)
+        if (result.duration !== undefined) {
+          // Convert duration from seconds to minutes, rounding up
+          const durationInMinutes = Math.ceil(result.duration / 60);
+          updatedData[index].videoLength = durationInMinutes.toString();
+          console.log('Video duration set to:', durationInMinutes, 'minutes (from', result.duration, 'seconds)');
+        }
+
+        setCourseContentData(updatedData);
+      })
+      .catch((error) => {
+        console.error('Upload error:', error);
+        toast.dismiss(loadingToast);
+        toast.error(error.data?.message || "Unknown error when uploading video", { duration: 5000 });
+
+        // Reset the file name for this index
+        const updatedFileNames = [...uploadedFileNames];
+        updatedFileNames[index] = "";
+        setUploadedFileNames(updatedFileNames);
+      });
+  };
+
   const newContentHandler = (item: any) => {
     if (
       item.title === "" ||
       item.description === "" ||
-      item.videoUrl === "" ||
-      item.videoLength === ""
+      item.videoUrl === ""
     ) {
       toast.error("Please fill all the fields first!");
     } else {
@@ -79,6 +143,7 @@ const CourseContent: FC<Props> = ({
       };
 
       setCourseContentData([...courseContentData, newContent]);
+      setUploadedFileNames([...uploadedFileNames, ""]);
     }
   };
 
@@ -100,6 +165,7 @@ const CourseContent: FC<Props> = ({
         links: [{ title: "", url: "" }],
       };
       setCourseContentData([...courseContentData, newContent]);
+      setUploadedFileNames([...uploadedFileNames, ""]);
     }
   };
 
@@ -113,8 +179,9 @@ const CourseContent: FC<Props> = ({
       courseContentData[courseContentData.length - 1].description === "" ||
       courseContentData[courseContentData.length - 1].videoUrl === ""
     ) {
-      toast.error("section can't be empty!");
+      toast.error("Section can't be empty!");
     } else {
+      toast.success("Course content saved");
       setActive(active + 1);
       handlleCourseSubmit();
     }
@@ -138,9 +205,8 @@ const CourseContent: FC<Props> = ({
           return (
             <>
               <div
-                className={`w-full bg-[#cdc8c817] p-4 ${
-                  showSectionInput ? "mt-10" : "mb-0"
-                }`}
+                className={`w-full bg-[#cdc8c817] p-4 ${showSectionInput ? "mt-10" : "mb-0"
+                  }`}
                 key={index}
               >
                 {showSectionInput && (
@@ -148,11 +214,10 @@ const CourseContent: FC<Props> = ({
                     <div className="flex w-full items-center">
                       <input
                         type="text"
-                        className={`text-[20px] ${
-                          item.videoSection === "Untitled Section"
+                        className={`text-[20px] ${item.videoSection === "Untitled Section"
                             ? "w-[170px]"
                             : "w-min"
-                        } font-Poppins cursor-pointer dark:text-white text-black bg-transparent outline-none`}
+                          } font-Poppins cursor-pointer dark:text-white text-black bg-transparent outline-none`}
                         value={item.videoSection}
                         onChange={(e) => {
                           const updatedData = [...courseContentData];
@@ -184,14 +249,17 @@ const CourseContent: FC<Props> = ({
                   {/* // arrow button for collasped video content */}
                   <div className="flex items-center">
                     <AiOutlineDelete
-                      className={`dark:text-white text-[20px] mr-2 text-black ${
-                        index > 0 ? "cursor-pointer" : "cursor-no-drop"
-                      }`}
+                      className={`dark:text-white text-[20px] mr-2 text-black ${index > 0 ? "cursor-pointer" : "cursor-no-drop"
+                        }`}
                       onClick={() => {
                         if (index > 0) {
                           const updatedData = [...courseContentData];
                           updatedData.splice(index, 1);
                           setCourseContentData(updatedData);
+
+                          const updatedFileNames = [...uploadedFileNames];
+                          updatedFileNames.splice(index, 1);
+                          setUploadedFileNames(updatedFileNames);
                         }
                       }}
                     />
@@ -224,11 +292,36 @@ const CourseContent: FC<Props> = ({
                       />
                     </div>
                     <div className="mb-3">
-                      <label className={styles.label}>Video Url</label>
+                      <label className={styles.label}>Video</label>
                       <input
-                        type="text"
-                        placeholder="sdder"
-                        className={`${styles.input}`}
+                        type="file"
+                        accept="video/*"
+                        id={`videoFile-${index}`}
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleVideoUpload(file, index);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={`videoFile-${index}`}
+                        className="mt-[10px] h-[40px] cursor-pointer rounded dark:border-white border-[#00000026] p-3 border flex items-center justify-center bg-transparent"
+                      >
+                        {uploadedFileNames[index] || (item.videoUrl ? "Video uploaded" : "Choose File")}
+                      </label>
+
+                      {/* Display video duration if available */}
+                      {item.videoLength && (
+                        <div className="mt-2 text-sm dark:text-gray-300 text-gray-700">
+                          Duration: {item.videoLength} minutes
+                        </div>
+                      )}
+
+                      {/* Hidden input to store the videoUrl value */}
+                      <input
+                        type="hidden"
                         value={item.videoUrl}
                         onChange={(e) => {
                           const updatedData = [...courseContentData];
@@ -236,15 +329,10 @@ const CourseContent: FC<Props> = ({
                           setCourseContentData(updatedData);
                         }}
                       />
-                    </div>
-                    <div className="mb-3">
-                      <label className={styles.label}>
-                        Video Length (in minutes)
-                      </label>
+
+                      {/* Hidden input to store the videoLength value */}
                       <input
-                        type="number"
-                        placeholder="20"
-                        className={`${styles.input}`}
+                        type="hidden"
                         value={item.videoLength}
                         onChange={(e) => {
                           const updatedData = [...courseContentData];
@@ -259,7 +347,7 @@ const CourseContent: FC<Props> = ({
                       <textarea
                         rows={8}
                         cols={30}
-                        placeholder="sdder"
+                        placeholder="Video description..."
                         className={`${styles.input} !h-min py-2`}
                         value={item.description}
                         onChange={(e) => {
@@ -315,7 +403,7 @@ const CourseContent: FC<Props> = ({
                         />
                       </div>
                     ))*/}
-                    
+
                     {/* add link button */}
                     <div className="hidden inline-block mb-4">
                       <p

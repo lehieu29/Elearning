@@ -1,4 +1,5 @@
 import express from "express";
+import upload from "../middleware/upload";
 import { authorizeRoles, isAuthenticated } from "../middleware/auth";
 import {
   addAnwser,
@@ -14,6 +15,7 @@ import {
   getSingleCourse,
   getTranscript,
   uploadCourse,
+  uploadVideoHandler,
 } from "../controller/course.controller";
 // import { updateAccessToken } from "../controller/user.controller";
 // create course router
@@ -76,5 +78,13 @@ courseRouter.delete(
   deleteCourse
 );
 courseRouter.post("/getVdoCipherOTP", generateVideoUrl);
+
+courseRouter.post(
+  "/upload-video",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  upload.single("file"),
+  uploadVideoHandler
+);
 
 courseRouter.post("/ai/:id",getTranscript);

@@ -1,7 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 import { styles } from "@/app/styles/style";
+import { useUploadVideoMutation } from "@/redux/features/courses/coursesApi";
 import { useGetHeroDataQuery } from "@/redux/features/layout/layoutApi";
 import React, { FC, useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 type Props = {
   courseInfo: any;
@@ -16,6 +18,8 @@ const CourseInformation: FC<Props> = ({
   active,
   setActive,
 }) => {
+  const [uploadVideo, { isLoading, isSuccess, error }] = useUploadVideoMutation();
+  const [uploadedFileName, setUploadedFileName] = useState("");
   const [dragging, setDragging] = useState(false);
   const { data } = useGetHeroDataQuery("Categories", {});
   const [categories, setCategories] = useState([]);
@@ -28,6 +32,50 @@ const CourseInformation: FC<Props> = ({
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
+
+    // Complete validation for all required fields
+    if (!courseInfo.name || courseInfo.name.trim() === "") {
+      toast.error("Please enter course name");
+      return;
+    }
+
+    if (!courseInfo.description || courseInfo.description.trim() === "") {
+      toast.error("Please enter course description");
+      return;
+    }
+
+    if (!courseInfo.price || courseInfo.price <= 0) {
+      toast.error("Please enter valid course price");
+      return;
+    }
+
+    if (!courseInfo.tags || courseInfo.tags.trim() === "") {
+      toast.error("Please enter course tags");
+      return;
+    }
+
+    if (!courseInfo.level || courseInfo.level.trim() === "") {
+      toast.error("Please specify course level");
+      return;
+    }
+
+    if (!courseInfo.demoUrl) {
+      toast.error("Please upload a demo video");
+      return;
+    }
+
+    if (!courseInfo.thumbnail) {
+      toast.error("Please upload a thumbnail image");
+      return;
+    }
+
+    // Optional validation for categories if needed
+    if (!courseInfo.categories) {
+      toast.error("Please select a category");
+      return;
+    }
+
+    toast.success("Course information saved");
     setActive(active + 1);
   };
 
@@ -39,6 +87,7 @@ const CourseInformation: FC<Props> = ({
       reader.onload = (e: any) => {
         if (reader.readyState === 2) {
           setCourseInfo({ ...courseInfo, thumbnail: reader.result });
+          toast.success("Thumbnail uploaded successfully");
         }
       };
       reader.readAsDataURL(file);
@@ -66,9 +115,52 @@ const CourseInformation: FC<Props> = ({
 
       reader.onload = () => {
         setCourseInfo({ ...courseInfo, thumbnail: reader.result });
+        toast.success("Thumbnail uploaded successfully", { duration: 3000 });
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleVideoUpload = (file: File) => {
+    if (!file) return;
+
+    // Log thông tin file để debug
+    console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+    // Kiểm tra kích thước và định dạng
+    if (file.size === 0) {
+      toast.error("File is empty, please select another file", { duration: 4000 });
+      return;
+    }
+
+    if (!file.type.startsWith('video/')) {
+      toast.error("Please select a valid video file", { duration: 4000 });
+      return;
+    }
+
+    // Lưu tên file
+    setUploadedFileName(file.name);
+
+    // Hiển thị toast uploading tối đa 10s
+    const loadingToast = toast.loading("Uploading video...", { duration: 10000 });
+
+    uploadVideo(file)
+      .unwrap()
+      .then((result) => {
+        console.log('Upload successful:', result);
+        toast.dismiss(loadingToast);
+        toast.success("Video uploaded successfully!", { duration: 3000 });
+        setCourseInfo({
+          ...courseInfo,
+          demoUrl: result.publicId
+        });
+      })
+      .catch((error) => {
+        console.error('Upload error:', error);
+        toast.dismiss(loadingToast);
+        toast.error(error.data?.message || "Unknown error when uploading video", { duration: 5000 });
+        setUploadedFileName("");
+      });
   };
 
   return (
@@ -79,7 +171,7 @@ const CourseInformation: FC<Props> = ({
           <input
             type="name"
             name=""
-            required
+            // Removed required
             value={courseInfo.name}
             onChange={(e: any) =>
               setCourseInfo({ ...courseInfo, name: e.target.value })
@@ -113,7 +205,7 @@ const CourseInformation: FC<Props> = ({
             <input
               type="number"
               name=""
-              required
+              // Removed required
               value={courseInfo.price}
               onChange={(e: any) =>
                 setCourseInfo({ ...courseInfo, price: e.target.value })
@@ -150,7 +242,7 @@ const CourseInformation: FC<Props> = ({
             </label>
             <input
               type="text"
-              required
+              // Removed required
               name=""
               value={courseInfo.tags}
               onChange={(e: any) =>
@@ -202,7 +294,7 @@ const CourseInformation: FC<Props> = ({
               type="text"
               name=""
               value={courseInfo.level}
-              required
+              // Removed required
               onChange={(e: any) =>
                 setCourseInfo({ ...courseInfo, level: e.target.value })
               }
@@ -213,20 +305,25 @@ const CourseInformation: FC<Props> = ({
             />
           </div>
           <div className="w-[50%]">
-            <label className={`${styles.label} w-[50%]`}>Demo Url</label>
+            <label className={`${styles.label} w-[50%]`}>Video Demo</label>
             <input
-              type="text"
-              name=""
-              required
-              value={courseInfo.demoUrl}
-              onChange={(e: any) =>
-                setCourseInfo({ ...courseInfo, demoUrl: e.target.value })
-              }
-              id="demoUrl"
-              placeholder="eer74fd"
+              type="file"
+              name="video"
+              accept="video/*"
+              // Removed required
+              id="demoURL"
+              onChange={(e: any) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  handleVideoUpload(file);
+                }
+              }}
               className={`
-            ${styles.input}`}
+            ${styles.input} hidden`}
             />
+            <label htmlFor="demoURL" className="mt-[10px] h-[40px] cursor-pointer rounded dark:border-white border-[#00000026] p-3 border flex items-center justify-center bg-transparent">
+              {uploadedFileName || (courseInfo.demoUrl ? "Video uploaded" : "Choose File")}
+            </label>
           </div>
         </div>
         <br />
@@ -240,9 +337,8 @@ const CourseInformation: FC<Props> = ({
           />
           <label
             htmlFor="file"
-            className={`w-full min-h-[10vh] dark:border-white border-[#00000026] p-3 border flex items-center justify-center ${
-              dragging ? "bg-blue-500" : "bg-transparent"
-            }`}
+            className={`w-full min-h-[10vh] dark:border-white border-[#00000026] p-3 border flex items-center justify-center ${dragging ? "bg-blue-500" : "bg-transparent"
+              }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}

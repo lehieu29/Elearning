@@ -10,6 +10,27 @@ export const coursesApi = apiSlice.injectEndpoints({
         credentials: "include" as const,
       }),
     }),
+    uploadVideo: builder.mutation({
+      query: (file: File) => {
+        // Kiểm tra file một lần nữa
+        if (!file || file.size === 0) {
+          throw new Error('File không hợp lệ hoặc rỗng');
+        }
+        
+        // Log thông tin để debug
+        console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+        
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        return {
+          url: "upload-video",
+          method: "POST",
+          body: formData,
+          credentials: "include" as const,
+        };
+      },
+    }),
     // get all course info only for admin
     getAllCourses: builder.query({
       query: () => ({
@@ -118,6 +139,7 @@ export const coursesApi = apiSlice.injectEndpoints({
 
 export const {
   useCreateCourseMutation,
+  useUploadVideoMutation,
   useGetAllCoursesQuery,
   useDeleteCourseMutation,
   useEditCourseMutation,
