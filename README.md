@@ -193,7 +193,7 @@ Make sure you have the following installed on your machine:
 
 **Cloning the Repository** -
 
-    git clone https://github.com/yghugardare/Elearning.git
+    git clone git@github.com:lehieu29/Elearning.git
 
 **Installation**
 
