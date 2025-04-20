@@ -1,11 +1,13 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import ffmpeg from 'fluent-ffmpeg';
+import { GoogleGenerativeAI, GenerateContentResult, Part } from '@google/generative-ai'; // Removed duplicate import
+import { Server as SocketIOServer } from 'socket.io';
+import ffmpeg, { FfprobeData } from 'fluent-ffmpeg';
 import ffmpegPath from '@ffmpeg-installer/ffmpeg';
 import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
-import subtitle from 'subtitle';
-import { SubtitleStyle, subtitleStylePresets } from '../models/subtitle_style.model';
+import { execSync } from 'child_process'; // Added import for execSync
+
+import { Subtitle, RawSubtitle, SegmentInfo, VideoMetadata, Segment, GeminiApiOptions, BurnOptions, PreprocessOptions, SubtitleStyle, subtitleStylePresets, SubtitleOptions, } from '../models/subtitle.model'; // Adjusted import path
 
 // Cấu hình đường dẫn FFmpeg
 ffmpeg.setFfmpegPath(ffmpegPath.path);
@@ -13,7 +15,7 @@ ffmpeg.setFfmpegPath(ffmpegPath.path);
 // Khởi tạo Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-pro', // hoặc 'gemini-2.5-pro' cho chất lượng tốt hơn
+    model: 'gemini-2.0-flash', // hoặc 'gemini-2.5-pro' cho chất lượng tốt hơn
 });
 
 /**
@@ -34,7 +36,7 @@ export async function convertToBase64Optimized(filePath: string): Promise<string
                 const stream = fs.createReadStream(filePath);
                 const chunks: Buffer[] = [];
 
-                stream.on('data', (chunk) => {
+                stream.on('data', (chunk: Buffer) => { // Added Buffer type for chunk
                     chunks.push(chunk);
                 });
 
@@ -59,14 +61,14 @@ export async function convertToBase64Optimized(filePath: string): Promise<string
  * Lấy thông tin metadata của video
  * @param videoPath Đường dẫn đến file video
  */
-export function getVideoMetadata(videoPath: string): Promise<{ duration: number }> {
+export function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
     return new Promise((resolve, reject) => {
-        ffmpeg.ffprobe(videoPath, (err, metadata) => {
+        ffmpeg.ffprobe(videoPath, (err: Error, metadata: FfprobeData) => {
             if (err) {
                 return reject(err);
             }
 
-            const duration = metadata.format.duration || 0;
+            const duration = metadata.format?.duration ?? 0; // Use optional chaining and nullish coalescing
             resolve({ duration });
         });
     });
@@ -82,18 +84,18 @@ export async function splitVideoIntoSegments(
     videoPath: string,
     segmentDuration = 600,
     outputDir: string
-): Promise<{ segments: any[], totalDuration: number }> {
+): Promise<{ segments: Segment[], totalDuration: number }> {
     return new Promise((resolve, reject) => {
         // Lấy thông tin video
-        ffmpeg.ffprobe(videoPath, (err, metadata) => {
+        ffmpeg.ffprobe(videoPath, (err: Error, metadata: FfprobeData) => {
             if (err) {
                 return reject(err);
             }
 
             // Lấy tổng thời lượng video
-            const duration = metadata.format.duration || 0;
+            const duration = metadata.format?.duration ?? 0; // Use optional chaining and nullish coalescing
 
-            const segments: any[] = [];
+            const segments: Segment[] = []; // Use Segment interface
             const segmentPromises: Promise<void>[] = [];
 
             // Tính số phân đoạn cần tạo
@@ -142,57 +144,6 @@ export async function splitVideoIntoSegments(
 }
 
 /**
- * Tạo prompt tối ưu cho Gemini API dựa trên loại nội dung
- * @param contentType Loại nội dung ('lecture', 'tutorial', 'demo', etc.)
- * @param segmentInfo Thông tin phân đoạn (nếu đang xử lý phân đoạn)
- */
-function getOptimizedPrompt(contentType = 'lecture', segmentInfo: any = null): string {
-    let prompt = `Tạo phụ đề chính xác cho video ${contentType} này. `;
-
-    // Thêm hướng dẫn về định dạng
-    prompt += `Trả về phụ đề theo định dạng JSON sau:
-  [
-    {
-      "index": (số thứ tự bắt đầu từ 0),
-      "startTime": (thời gian bắt đầu định dạng mm:ss.sss),
-      "endTime": (thời gian kết thúc định dạng mm:ss.sss),
-      "text": (nội dung phụ đề)
-    }
-  ]
-  
-  Hướng dẫn về chất lượng phụ đề:
-  1. Phụ đề phải ngắn gọn, mỗi câu không quá 80 ký tự hoặc 2 dòng
-  2. Thời lượng mỗi phụ đề từ 2-6 giây, tùy theo lượng nội dung
-  3. Giữ nguyên ngữ nghĩa của nội dung, loại bỏ các từ lặp lại không cần thiết
-  4. Cú pháp và chính tả phải chính xác
-  5. Đảm bảo thời gian phụ đề đồng bộ với lời nói trong video`;
-
-    // Nếu xử lý phân đoạn, thêm thông tin về phân đoạn
-    if (segmentInfo) {
-        prompt += `\n\nĐây là phân đoạn ${segmentInfo.index + 1} của video, bắt đầu từ thời điểm ${segmentInfo.startTime} giây, độ dài ${segmentInfo.duration} giây.`;
-
-        if (segmentInfo.totalDuration) {
-            prompt += ` Tổng thời lượng của video là ${segmentInfo.totalDuration} giây.`;
-        }
-
-        prompt += `\nĐảm bảo thời gian bắt đầu và kết thúc của phụ đề nằm trong phạm vi phân đoạn này (${segmentInfo.startTime} - ${segmentInfo.startTime + segmentInfo.duration} giây).`;
-    }
-
-    // Thêm hướng dẫn đặc biệt dựa trên loại nội dung
-    if (contentType === 'lecture') {
-        prompt += `\n\nĐây là video bài giảng, cần chú ý:
-    1. Giữ lại thuật ngữ kỹ thuật, công thức hoặc khái niệm quan trọng
-    2. Xử lý phù hợp các trường hợp giảng viên nêu câu hỏi hoặc diễn giải`;
-    } else if (contentType === 'tutorial') {
-        prompt += `\n\nĐây là video hướng dẫn, cần chú ý:
-    1. Giữ lại các bước chỉ dẫn quan trọng, số thứ tự các bước
-    2. Đảm bảo thời gian phụ đề khớp với các thao tác trực quan`;
-    }
-
-    return prompt;
-}
-
-/**
  * Chuyển định dạng thời gian từ 'mm:ss.sss' sang số giây
  */
 function parseTimeToSeconds(timeStr: string): number {
@@ -209,7 +160,7 @@ function parseTimeToSeconds(timeStr: string): number {
 /**
  * Gọi Gemini API để tạo phụ đề
  */
-export async function callGeminiApi(videoBase64: string, options: any = {}): Promise<any[]> {
+export async function callGeminiApi(videoBase64: string, options: GeminiApiOptions = {}): Promise<Subtitle[]> { // Use GeminiApiOptions and Subtitle[]
     try {
         const mimeType = options.mimeType || 'video/mp4';
         const contentType = options.contentType || 'lecture';
@@ -218,22 +169,20 @@ export async function callGeminiApi(videoBase64: string, options: any = {}): Pro
         // Chuẩn bị prompt
         const prompt = getEnhancedPrompt(contentType, segmentInfo);
 
-        // Chuẩn bị request
-        const result = await model.generateContent({
-            contents: [
-                {
-                    role: "user",
-                    parts: [
-                        { text: prompt },
-                        {
-                            inlineData: {
-                                mimeType: mimeType,
-                                data: videoBase64
-                            }
-                        }
-                    ]
+        // Chuẩn bị request parts
+        const requestParts: Part[] = [
+            { text: prompt },
+            {
+                inlineData: {
+                    mimeType: mimeType,
+                    data: videoBase64
                 }
-            ],
+            }
+        ];
+
+        // Chuẩn bị request
+        const result: GenerateContentResult = await model.generateContent({
+            contents: [{ role: "user", parts: requestParts }],
             generationConfig: {
                 temperature: 0.2,
                 topK: 32,
@@ -243,42 +192,68 @@ export async function callGeminiApi(videoBase64: string, options: any = {}): Pro
         });
 
         // Xử lý response
-        const responseText = result.response.text();
+        const response = result.response;
+        const responseText = response.text();
         console.log('Gemini API response:', responseText.substring(0, 200) + '...');
 
         // Tìm phần JSON trong response
-        const jsonMatch = responseText.match(/\[\s*\{.*\}\s*\]/s);
-        if (!jsonMatch) {
-            throw new Error('Không thể tìm thấy dữ liệu JSON trong response');
+        const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```|(\[\s*\{[\s\S]*?\}\s*\])/s); // Look for markdown code block or raw JSON array
+        let jsonString: string | null = null;
+
+        if (jsonMatch) {
+            jsonString = jsonMatch[1] || jsonMatch[2]; // Extract content from markdown or the raw array
+        }
+
+        if (!jsonString) {
+            console.error('Raw response:', responseText);
+            throw new Error('Không thể tìm thấy dữ liệu JSON hợp lệ trong response từ Gemini API.');
         }
 
         // Parse JSON
-        const subtitlesJson = JSON.parse(jsonMatch[0]);
+        let subtitlesJson: RawSubtitle[];
+        try {
+            subtitlesJson = JSON.parse(jsonString);
+        } catch (parseError: unknown) {
+            console.error('Failed to parse JSON:', jsonString);
+            throw new Error(`Lỗi phân tích JSON từ Gemini API: ${(parseError as Error).message}`);
+        }
+
+        // Validate parsed JSON structure (basic check)
+        if (!Array.isArray(subtitlesJson) || subtitlesJson.some(sub => typeof sub.index !== 'number' || typeof sub.startTime !== 'string' || typeof sub.endTime !== 'string' || typeof sub.text !== 'string')) {
+            console.error('Invalid subtitle structure received:', subtitlesJson);
+            throw new Error('Cấu trúc dữ liệu phụ đề nhận được không hợp lệ.');
+        }
 
         // Chuyển đổi định dạng thời gian thành seconds
-        return subtitlesJson.map((subtitle: any) => ({
+        return subtitlesJson.map((subtitle: RawSubtitle): Subtitle => ({ // Use RawSubtitle and Subtitle types
             index: subtitle.index,
             start: parseTimeToSeconds(subtitle.startTime),
             end: parseTimeToSeconds(subtitle.endTime),
             text: subtitle.text
         }));
-    } catch (error: any) {
-        console.error('Error calling Gemini API:', error.message);
-        throw new Error(`Failed to generate subtitles: ${error.message}`);
+    } catch (error: unknown) { // Use unknown for error type
+        const errorMessage = (error instanceof Error) ? error.message : String(error);
+        console.error('Error calling Gemini API:', errorMessage);
+        // Propagate a more specific error if possible, otherwise a generic one
+        if (error instanceof Error && error.message.includes('JSON')) {
+            throw error; // Re-throw JSON parsing errors
+        }
+        throw new Error(`Failed to generate subtitles: ${errorMessage}`);
     }
 }
 
 /**
  * Thử lại gọi Gemini API với số lần tối đa
  */
-export async function callGeminiApiWithRetry(videoBase64: string, options: any = {}, maxRetries = 3): Promise<any[]> {
-    let lastError: any;
+export async function callGeminiApiWithRetry(videoBase64: string, options: GeminiApiOptions = {}, maxRetries = 3): Promise<Subtitle[]> { // Use GeminiApiOptions and Subtitle[]
+    let lastError: Error | unknown; // Use Error | unknown
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
             return await callGeminiApi(videoBase64, options);
-        } catch (error: any) {
-            console.error(`Attempt ${attempt}/${maxRetries} failed:`, error.message);
+        } catch (error: unknown) { // Use unknown
+            const errorMessage = (error instanceof Error) ? error.message : String(error);
+            console.error(`Attempt ${attempt}/${maxRetries} failed:`, errorMessage);
             lastError = error;
 
             // Nếu chưa phải lần thử cuối, đợi trước khi thử lại
@@ -297,11 +272,21 @@ export async function callGeminiApiWithRetry(videoBase64: string, options: any =
 /**
  * Tạo file phụ đề SRT
  */
-export async function createSubtitleFile(subtitles: any[], outputPath: string): Promise<void> {
+export async function createSubtitleFile(subtitles: Subtitle[], outputPath: string): Promise<void> { // Use Subtitle[]
     // Chuyển đổi định dạng subtitles sang định dạng SRT
-    const srtSubtitles = subtitles.map((sub: any, index: number) => {
-        const startTime = new Date(sub.start * 1000).toISOString().substr(11, 12).replace('.', ',');
-        const endTime = new Date(sub.end * 1000).toISOString().substr(11, 12).replace('.', ',');
+    const srtSubtitles = subtitles.map((sub: Subtitle, index: number) => { // Use Subtitle
+        // Use helper function for SRT time format
+        const formatTimeToSrt = (timeInSeconds: number): string => {
+            const hours = Math.floor(timeInSeconds / 3600);
+            const minutes = Math.floor((timeInSeconds % 3600) / 60);
+            const seconds = Math.floor(timeInSeconds % 60);
+            const milliseconds = Math.floor((timeInSeconds % 1) * 1000);
+
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')},${milliseconds.toString().padStart(3, '0')}`;
+        };
+
+        const startTime = formatTimeToSrt(sub.start);
+        const endTime = formatTimeToSrt(sub.end);
 
         return {
             id: index + 1,
@@ -312,7 +297,7 @@ export async function createSubtitleFile(subtitles: any[], outputPath: string): 
     });
 
     // Tạo nội dung file SRT
-    const srtContent = srtSubtitles.map((sub: any) => {
+    const srtContent = srtSubtitles.map((sub: { id: number; start: string; end: string; text: string }) => { // Add type for mapped sub
         return `${sub.id}\n${sub.start} --> ${sub.end}\n${sub.text}\n`;
     }).join('\n');
 
@@ -503,18 +488,18 @@ export async function burnSubtitlesToVideo(
             .addOption('-vf', `subtitles=${subtitlePath}:force_style='${styleString}${positionString}'`)
             .output(outputPath)
             .outputOptions('-c:a copy') // Giữ nguyên audio
-            .on('start', (commandLine) => {
+            .on('start', (commandLine: string) => { // Added string type for commandLine
                 console.log('FFmpeg command:', commandLine);
             })
             .on('end', () => {
                 console.log('Subtitles burned successfully');
                 resolve(outputPath);
             })
-            .on('error', (err) => {
+            .on('error', (err: Error) => { // Added Error type for err
                 console.error('Error burning subtitles:', err);
                 reject(err);
             })
-            .on('progress', (progress) => {
+            .on('progress', (progress: { percent?: number }) => { // Added type for progress
                 console.log(`Processing: ${progress.percent ? Math.round(progress.percent) : 0}% done`);
             })
             .run();
@@ -559,7 +544,7 @@ export async function getDefaultSubtitleStyle(): Promise<SubtitleStyle> {
 /**
  * Cơ chế fallback nếu mọi lần thử đều thất bại
  */
-export async function processFallback(videoPath: string): Promise<any[]> {
+export async function processFallback(videoPath: string): Promise<Subtitle[]> { // Use Subtitle[]
     console.log('Using fallback method for subtitle generation');
 
     try {
@@ -618,16 +603,16 @@ export async function splitVideoIntoSmartSegmentsOptimized(
     maxSegmentDuration = 600,
     outputDir: string,
     maxDetectionDuration = 3600 // Giới hạn phát hiện khoảng lặng trong 1 giờ đầu tiên
-): Promise<{ segments: any[], totalDuration: number }> {
+): Promise<{ segments: Segment[], totalDuration: number }> { // Use Segment[]
     return new Promise((resolve, reject) => {
         // Lấy thông tin video
-        ffmpeg.ffprobe(videoPath, async (err, metadata) => {
+        ffmpeg.ffprobe(videoPath, async (err: Error, metadata: FfprobeData) => { // Add types for err and metadata
             if (err) {
                 return reject(err);
             }
 
             // Lấy tổng thời lượng video
-            const duration = metadata.format.duration || 0;
+            const duration = metadata.format?.duration ?? 0; // Use optional chaining and nullish coalescing
             console.log(`Video total duration: ${duration} seconds`);
 
             // Nếu video quá dài, chia thành các phân đoạn đều nhau thay vì phân tích khoảng lặng
@@ -666,9 +651,9 @@ export async function splitVideoIntoSmartSegmentsOptimized(
                         .audioFilters('silencedetect=noise=-30dB:d=1')
                         .format('null')
                         .output('-')
-                        .on('error', rejectDetect)
+                        .on('error', (err: Error) => rejectDetect(err)) // Add type for err
                         .on('end', () => resolveDetect())
-                        .on('stderr', (stderrLine) => {
+                        .on('stderr', (stderrLine: string) => { // Add type for stderrLine
                             // Phân tích output để tìm khoảng lặng
                             const silenceMatches = stderrLine.match(/silence_end: (\d+\.\d+)/g);
                             if (silenceMatches && silenceMatches.length > 0) {
@@ -728,8 +713,8 @@ export async function splitVideoIntoSmartSegmentsOptimized(
                 console.log(`Optimized segment breakpoints: ${segmentBreakpoints.join(', ')}`);
 
                 // Tạo các phân đoạn video từ các điểm phân đoạn
-                const segments: any[] = [];
-                const segmentPromises: Promise<void>[] = [];
+                const segments: Segment[] = []; // Use Segment[]
+                // const segmentPromises: Promise<void>[] = []; // This variable is unused
 
                 // Giới hạn số lượng công việc xử lý song song
                 const maxConcurrent = 2; // Giới hạn số công việc ffmpeg đồng thời
@@ -758,7 +743,7 @@ export async function splitVideoIntoSmartSegmentsOptimized(
                                 .setStartTime(startTime)
                                 .setDuration(segmentDuration)
                                 .output(outputPath)
-                                .on('progress', (progress) => {
+                                .on('progress', (progress: { percent?: number }) => { // Add type for progress
                                     console.log(`Segment ${i + 1}/${segmentBreakpoints.length - 1}: ${Math.round(progress.percent || 0)}% done`);
                                 })
                                 .on('end', () => {
@@ -770,7 +755,7 @@ export async function splitVideoIntoSmartSegmentsOptimized(
                                     });
                                     resolveSegment();
                                 })
-                                .on('error', rejectSegment)
+                                .on('error', (err: Error) => rejectSegment(err)) // Add type for err
                                 .run();
                         });
                     });
@@ -802,16 +787,16 @@ export async function splitVideoIntoSmartSegmentsOptimized(
  * Tối ưu hóa xử lý song song với quản lý tài nguyên
  */
 export async function processSegmentsInParallelOptimized(
-    segments: any[],
-    options: any = {},
+    segments: Segment[], // Use Segment[]
+    options: GeminiApiOptions = {}, // Use GeminiApiOptions
     onProgress?: (progress: number, message: string) => void
-): Promise<any[]> {
+): Promise<Subtitle[]> { // Use Subtitle[]
     if (!segments || segments.length === 0) {
         return [];
     }
 
     const totalSegments = segments.length;
-    const allSubtitles: any[] = [];
+    const allSubtitles: Subtitle[] = []; // Use Subtitle[]
 
     // Tự động tính số lượng xử lý đồng thời dựa trên số lõi CPU
     const cpuCount = os.cpus().length;
@@ -819,7 +804,7 @@ export async function processSegmentsInParallelOptimized(
     console.log(`Using ${concurrentLimit} concurrent processes based on ${cpuCount} CPU cores`);
 
     // Chia thành các nhóm xử lý
-    const segmentGroups: any[][] = [];
+    const segmentGroups: Segment[][] = []; // Use Segment[][]
     for (let i = 0; i < segments.length; i += concurrentLimit) {
         segmentGroups.push(segments.slice(i, i + concurrentLimit));
     }
@@ -855,7 +840,7 @@ export async function processSegmentsInParallelOptimized(
         }
 
         // Xử lý song song các phân đoạn trong nhóm
-        const batchPromises = group.map(async (segment: any) => {
+        const batchPromises = group.map(async (segment: Segment) => { // Use Segment
             try {
                 console.log(`Processing segment ${segment.index + 1}/${totalSegments}`);
 
@@ -879,7 +864,7 @@ export async function processSegmentsInParallelOptimized(
                             .setDuration(Math.min(segment.duration, 300)) // Tối đa 5 phút
                             .output(tempSegmentPath)
                             .on('end', () => resolveExtract())
-                            .on('error', rejectExtract)
+                            .on('error', (err: Error) => rejectExtract(err)) // Add type for err
                             .run();
                     });
 
@@ -909,23 +894,24 @@ export async function processSegmentsInParallelOptimized(
                 };
 
                 // Gọi API với tiếp tục với cơ chế thử lại
-                const segmentSubtitles = await callGeminiApiWithRetry(segmentBase64, segmentOptions);
+                const segmentSubtitles: Subtitle[] = await callGeminiApiWithRetry(segmentBase64, segmentOptions); // Use Subtitle[]
 
                 // Điều chỉnh timestamp dựa trên vị trí phân đoạn
-                return segmentSubtitles.map((subtitle: any) => ({
+                return segmentSubtitles.map((subtitle: Subtitle): Subtitle => ({ // Use Subtitle
                     ...subtitle,
                     start: subtitle.start + segment.startTime,
                     end: subtitle.end + segment.startTime
                 }));
-            } catch (error: any) {
-                console.error(`Error processing segment ${segment.index + 1}/${totalSegments}:`, error);
+            } catch (error: unknown) { // Use unknown
+                const errorMessage = (error instanceof Error) ? error.message : String(error);
+                console.error(`Error processing segment ${segment.index + 1}/${totalSegments}:`, errorMessage);
 
                 // Thử lại với mô hình dự phòng nếu lỗi
                 try {
                     console.log(`Retrying segment ${segment.index + 1} with fallback model...`);
-                    const fallbackOptions = {
+                    const fallbackOptions: GeminiApiOptions = { // Use GeminiApiOptions
                         ...options,
-                        model: 'gemini-1.5-flash',
+                        model: 'gemini-1.5-flash', // Ensure model is part of the type
                         segmentInfo: {
                             index: segment.index,
                             startTime: segment.startTime,
@@ -935,17 +921,18 @@ export async function processSegmentsInParallelOptimized(
                     };
 
                     const segmentBase64 = await convertToBase64Optimized(segment.path);
-                    const segmentSubtitles = await callGeminiApiWithRetry(segmentBase64, fallbackOptions);
+                    const segmentSubtitles: Subtitle[] = await callGeminiApiWithRetry(segmentBase64, fallbackOptions); // Use Subtitle[]
 
-                    return segmentSubtitles.map((subtitle: any) => ({
+                    return segmentSubtitles.map((subtitle: Subtitle): Subtitle => ({ // Use Subtitle
                         ...subtitle,
                         start: subtitle.start + segment.startTime,
                         end: subtitle.end + segment.startTime
                     }));
-                } catch (fallbackError) {
-                    console.error(`Fallback also failed for segment ${segment.index + 1}:`, fallbackError);
+                } catch (fallbackError: unknown) { // Use unknown
+                    const fallbackErrorMessage = (fallbackError instanceof Error) ? fallbackError.message : String(fallbackError);
+                    console.error(`Fallback also failed for segment ${segment.index + 1}:`, fallbackErrorMessage);
                     // Tạo phụ đề đơn giản cho phân đoạn này thay vì trả về mảng rỗng
-                    return [
+                    const fallbackSubs: Subtitle[] = [ // Use Subtitle[]
                         {
                             index: 0,
                             start: segment.startTime,
@@ -959,6 +946,7 @@ export async function processSegmentsInParallelOptimized(
                             text: `[Nội dung video]`
                         }
                     ];
+                    return fallbackSubs;
                 }
             } finally {
                 processedCount++;
@@ -992,7 +980,7 @@ export async function processSegmentsInParallelOptimized(
 /**
  * Cải tiến prompt cho Gemini API với hướng dẫn chi tiết hơn
  */
-function getEnhancedPrompt(contentType = 'lecture', segmentInfo: any = null): string {
+function getEnhancedPrompt(contentType = 'lecture', segmentInfo: SegmentInfo | null = null): string { // Use SegmentInfo
     let prompt = `Tạo phụ đề chính xác cho video ${contentType} này.`;
 
     // Thêm chi tiết về định dạng cần thiết
@@ -1065,7 +1053,7 @@ function getEnhancedPrompt(contentType = 'lecture', segmentInfo: any = null): st
 /**
  * Cải tiến hậu xử lý phụ đề để tăng chất lượng
  */
-function enhancedPostProcessSubtitles(subtitles: any[]): any[] {
+function enhancedPostProcessSubtitles(subtitles: Subtitle[]): Subtitle[] { // Use Subtitle[]
     if (!subtitles || subtitles.length === 0) {
         return [];
     }
@@ -1074,7 +1062,7 @@ function enhancedPostProcessSubtitles(subtitles: any[]): any[] {
     subtitles.sort((a, b) => a.start - b.start);
 
     // Bước 1: Loại bỏ phụ đề trùng lặp hoặc gần giống nhau
-    const deduplicatedSubtitles: any[] = [];
+    const deduplicatedSubtitles: Subtitle[] = []; // Use Subtitle[]
     for (let i = 0; i < subtitles.length; i++) {
         if (i === 0) {
             deduplicatedSubtitles.push(subtitles[i]);
@@ -1150,10 +1138,10 @@ function enhancedPostProcessSubtitles(subtitles: any[]): any[] {
     });
 
     // Bước 3: Đảm bảo không có chồng chéo và có khoảng cách phù hợp giữa các phụ đề
-    const finalSubtitles: any[] = [];
+    const finalSubtitles: Subtitle[] = []; // Use Subtitle[]
 
     for (let i = 0; i < adjustedSubtitles.length; i++) {
-        const currentSub = { ...adjustedSubtitles[i] };
+        const currentSub = { ...adjustedSubtitles[i] }; // Explicitly copy
 
         if (i === 0) {
             finalSubtitles.push(currentSub);
@@ -1216,7 +1204,7 @@ function enhancedPostProcessSubtitles(subtitles: any[]): any[] {
 /**
  * Tối ưu hóa việc tạo file phụ đề SRT với kiểm tra chất lượng
  */
-export async function createEnhancedSubtitleFile(subtitles: any[], outputPath: string): Promise<void> {
+export async function createEnhancedSubtitleFile(subtitles: Subtitle[], outputPath: string): Promise<void> { // Use Subtitle[]
     if (!subtitles || subtitles.length === 0) {
         throw new Error('No subtitles provided');
     }
@@ -1268,7 +1256,7 @@ export async function createEnhancedSubtitleFile(subtitles: any[], outputPath: s
     }
 
     // Format các phụ đề sang định dạng SRT
-    const srtSubtitles = subtitles.map((sub: any, index: number) => {
+    const srtSubtitles = subtitles.map((sub: Subtitle, index: number) => { // Use Subtitle
         // Đảm bảo định dạng thời gian chính xác hh:mm:ss,mmm
         const formatTimeToSrt = (timeInSeconds: number): string => {
             const hours = Math.floor(timeInSeconds / 3600);
@@ -1316,6 +1304,7 @@ export async function createEnhancedSubtitleFile(subtitles: any[], outputPath: s
     console.log(`Enhanced subtitle file created: ${outputPath}`);
 }
 
+
 /**
  * Tối ưu hóa quá trình gắn phụ đề vào video
  * - Tăng tốc độ xử lý
@@ -1327,12 +1316,7 @@ export async function burnSubtitlesOptimized(
     subtitlePath: string,
     outputPath: string,
     style?: SubtitleStyle | string,
-    options: {
-        hardwareAcceleration?: boolean;
-        preserveQuality?: boolean;
-        showProgress?: boolean;
-        onProgress?: (progress: number) => void;
-    } = {}
+    options: BurnOptions = {} // Use BurnOptions
 ): Promise<string> {
     // Xác định style cần sử dụng
     let subtitleStyle: SubtitleStyle;
@@ -1372,13 +1356,18 @@ export async function burnSubtitlesOptimized(
             // Windows - thử sử dụng NVIDIA trước, sau đó là Intel QuickSync
             try {
                 // Kiểm tra xem có GPU NVIDIA không
-                const nvidiaSmiOutput = require('child_process').execSync('nvidia-smi', { stdio: 'pipe' }).toString();
+                const nvidiaSmiOutput = execSync('nvidia-smi', { stdio: 'pipe' }).toString(); // Use imported execSync
                 if (nvidiaSmiOutput.includes('NVIDIA-SMI')) {
                     hwaccel = 'cuda';
                     videoCodec = 'h264_nvenc';
+                } else {
+                    // Thử Intel QuickSync nếu không có NVIDIA
+                    hwaccel = 'qsv';
+                    videoCodec = 'h264_qsv';
                 }
-            } catch (e) {
-                // Không có GPU NVIDIA, thử Intel QuickSync
+            } catch (e: unknown) {
+                // Lỗi khi chạy nvidia-smi (có thể không cài đặt), thử Intel QuickSync
+                console.warn("nvidia-smi command failed, attempting QSV:", (e instanceof Error) ? e.message : String(e));
                 hwaccel = 'qsv';
                 videoCodec = 'h264_qsv';
             }
@@ -1428,21 +1417,21 @@ export async function burnSubtitlesOptimized(
 
         // Xử lý sự kiện
         ffmpegCommand
-            .on('start', (commandLine) => {
+            .on('start', (commandLine: string) => { // Added string type for commandLine
                 console.log('FFmpeg command:', commandLine);
             })
             .on('end', () => {
                 console.log('Subtitles burned successfully');
                 resolve(outputPath);
             })
-            .on('error', (err) => {
+            .on('error', (err: Error) => { // Add type for err
                 console.error('Error burning subtitles:', err);
                 reject(err);
             });
 
         // Hiển thị tiến độ nếu được yêu cầu
         if (options.showProgress !== false) {
-            ffmpegCommand.on('progress', (progress) => {
+            ffmpegCommand.on('progress', (progress: { percent?: number }) => { // Add type for progress
                 const percent = progress.percent ? Math.round(progress.percent) : 0;
                 console.log(`Processing: ${percent}% done`);
 
@@ -1466,16 +1455,11 @@ export async function burnSubtitlesOptimized(
 export async function preprocessVideo(
     videoPath: string,
     outputPath: string,
-    options: {
-        maxWidth?: number;
-        maxHeight?: number;
-        targetBitrate?: string;
-        normalizeAudio?: boolean;
-    } = {}
+    options: PreprocessOptions = {} // Use PreprocessOptions
 ): Promise<string> {
     return new Promise((resolve, reject) => {
         // Lấy thông tin video
-        ffmpeg.ffprobe(videoPath, (err, metadata) => {
+        ffmpeg.ffprobe(videoPath, (err: Error, metadata: FfprobeData) => { // Add types for err and metadata
             if (err) {
                 return reject(err);
             }
@@ -1485,15 +1469,12 @@ export async function preprocessVideo(
             let height = 0;
             let inputBitrate = 0;
 
-            if (metadata.streams) {
-                for (const stream of metadata.streams) {
-                    if (stream.codec_type === 'video') {
-                        width = stream.width || 0;
-                        height = stream.height || 0;
-                        inputBitrate = stream.bit_rate ? parseInt(stream.bit_rate) : 0;
-                        break;
-                    }
-                }
+            // Use optional chaining and nullish coalescing for safer access
+            const videoStream = metadata.streams?.find((stream: ffmpeg.FfprobeStream) => stream.codec_type === 'video'); // Use FfprobeStream type
+            if (videoStream) {
+                width = videoStream.width ?? 0;
+                height = videoStream.height ?? 0;
+                inputBitrate = videoStream.bit_rate ? parseInt(videoStream.bit_rate, 10) : 0; // Add radix 10
             }
 
             // Xác định kích thước đầu ra
@@ -1529,7 +1510,7 @@ export async function preprocessVideo(
             }
 
             // Xác định bitrate đầu ra
-            const targetBitrate = options.targetBitrate ||
+            const targetBitrate = options.targetBitrate ?? // Use nullish coalescing
                 (inputBitrate > 0 ? `${Math.min(inputBitrate, 2500000)}` : '2500k'); // Giới hạn 2.5 Mbps
 
             // Tạo ffmpeg command
@@ -1569,18 +1550,18 @@ export async function preprocessVideo(
 
             // Xử lý sự kiện
             ffmpegCommand
-                .on('start', (commandLine) => {
+                .on('start', (commandLine: string) => { // Added string type for commandLine
                     console.log('FFmpeg preprocessing command:', commandLine);
                 })
                 .on('end', () => {
                     console.log('Video preprocessing completed successfully');
                     resolve(outputPath);
                 })
-                .on('error', (err) => {
+                .on('error', (err: Error) => { // Add type for err
                     console.error('Error preprocessing video:', err);
                     reject(err);
                 })
-                .on('progress', (progress) => {
+                .on('progress', (progress: { percent?: number }) => { // Add type for progress
                     console.log(`Preprocessing: ${progress.percent ? Math.round(progress.percent) : 0}% done`);
                 });
 
@@ -1595,10 +1576,10 @@ export async function preprocessVideo(
  */
 export async function processVideoAndGenerateSubtitlesOptimized(
     videoPath: string,
-    options: any = {},
+    options: GeminiApiOptions & { contentType?: string } = {}, // Combine GeminiApiOptions with contentType
     onProgress?: (progress: number, message: string) => void
 ): Promise<{
-    subtitles: any[];
+    subtitles: Subtitle[]; // Use Subtitle[]
     subtitlePath: string;
     outputVideoPath: string;
 }> {
@@ -1649,7 +1630,7 @@ export async function processVideoAndGenerateSubtitlesOptimized(
         const { duration } = await getVideoMetadata(processedVideoPath);
         const subtitlePath = path.join(tempDir, 'subtitles.srt');
         const outputVideoPath = path.join(tempDir, `output_${path.basename(videoPath)}`);
-        let subtitles: any[] = [];
+        let subtitles: Subtitle[] = []; // Use Subtitle[]
 
         console.log(`Processing video with duration: ${duration} seconds`);
 
@@ -1666,12 +1647,13 @@ export async function processVideoAndGenerateSubtitlesOptimized(
                 progressTracker(40, 'Đang tạo phụ đề với Gemini AI...');
                 subtitles = await callGeminiApiWithRetry(videoBase64, {
                     ...options,
-                    mimeType: 'video/mp4'
+                    mimeType: 'video/mp4' // Ensure mimeType is passed if needed by callGeminiApiWithRetry
                 });
 
                 progressTracker(70, 'Đã nhận phụ đề từ Gemini AI');
-            } catch (error) {
-                console.error('Error generating subtitles directly:', error);
+            } catch (error: unknown) { // Use unknown
+                const errorMessage = (error instanceof Error) ? error.message : String(error);
+                console.error('Error generating subtitles directly:', errorMessage);
                 progressTracker(40, 'Gặp lỗi, đang sử dụng phương án dự phòng...');
                 // Sử dụng fallback
                 subtitles = await processFallback(processedVideoPath);
@@ -1698,8 +1680,9 @@ export async function processVideoAndGenerateSubtitlesOptimized(
                     const scaledProgress = 35 + (progress * 0.4);
                     progressTracker(Math.round(scaledProgress), message);
                 });
-            } catch (error) {
-                console.error('Error processing video segments:', error);
+            } catch (error: unknown) { // Use unknown
+                const errorMessage = (error instanceof Error) ? error.message : String(error);
+                console.error('Error processing video segments:', errorMessage);
                 progressTracker(50, 'Gặp lỗi khi xử lý phân đoạn, đang sử dụng phương án dự phòng...');
                 // Sử dụng fallback
                 subtitles = await processFallback(processedVideoPath);
@@ -1719,7 +1702,10 @@ export async function processVideoAndGenerateSubtitlesOptimized(
 
         // Xác định cài đặt phụ đề dựa trên loại nội dung
         const contentType = options.contentType || 'lecture';
-        const subtitleStyleName = contentType in subtitleStylePresets ? contentType : 'default';
+        // Ensure subtitleStylePresets keys are checked safely
+        const validPresetKeys = Object.keys(subtitleStylePresets) as Array<keyof typeof subtitleStylePresets>;
+        const subtitleStyleName = validPresetKeys.includes(contentType as keyof typeof subtitleStylePresets) ? contentType : 'default';
+
 
         await burnSubtitlesOptimized(
             processedVideoPath,
@@ -1745,14 +1731,16 @@ export async function processVideoAndGenerateSubtitlesOptimized(
             subtitlePath,
             outputVideoPath
         };
-    } catch (error) {
+    } catch (error: unknown) { // Use unknown
         // Xóa thư mục tạm nếu có lỗi
         try {
             await fs.remove(tempDir);
-        } catch (cleanupError) {
-            console.error('Error cleaning up temp directory:', cleanupError);
+        } catch (cleanupError: unknown) { // Use unknown
+            const cleanupErrorMessage = (cleanupError instanceof Error) ? cleanupError.message : String(cleanupError);
+            console.error('Error cleaning up temp directory:', cleanupErrorMessage);
         }
 
+        // Re-throw the original error
         throw error;
     }
 }

@@ -87,4 +87,11 @@ courseRouter.post(
   uploadVideoHandler
 );
 
+// Allow anonymous users to upload subtitles
+/*courseRouter.post(
+  "/add-subtitles",
+  upload.single("file"),
+  addSubtitlesToVideo
+);*/
+
 courseRouter.post("/ai/:id",getTranscript);

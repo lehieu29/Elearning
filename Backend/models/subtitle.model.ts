@@ -1,3 +1,57 @@
+
+export interface Subtitle {
+    index: number;
+    start: number; // Time in seconds
+    end: number; // Time in seconds
+    text: string;
+}
+
+export interface RawSubtitle {
+    index: number;
+    startTime: string; // Format mm:ss.sss
+    endTime: string; // Format mm:ss.sss
+    text: string;
+}
+
+export interface SegmentInfo {
+    index: number;
+    startTime: number;
+    duration: number;
+    totalDuration?: number;
+}
+
+export interface VideoMetadata {
+    duration: number;
+}
+
+export interface Segment {
+    index: number;
+    path: string;
+    startTime: number;
+    duration: number;
+}
+
+export interface GeminiApiOptions {
+    mimeType?: string;
+    contentType?: string;
+    segmentInfo?: SegmentInfo | null;
+    model?: string; // Allow specifying model for fallback
+}
+
+export interface BurnOptions {
+    hardwareAcceleration?: boolean;
+    preserveQuality?: boolean;
+    showProgress?: boolean;
+    onProgress?: (progress: number) => void;
+}
+
+export interface PreprocessOptions {
+    maxWidth?: number;
+    maxHeight?: number;
+    targetBitrate?: string;
+    normalizeAudio?: boolean;
+}
+
 /**
  * Cấu trúc kiểu dáng phụ đề mở rộng
  */
@@ -157,3 +211,11 @@ export const subtitleStylePresets: Record<string, SubtitleStyle> = {
         shadowDepth: 3
     }
 };
+
+export interface SubtitleOptions {
+    contentType?: string;
+    language?: string;
+    style?: string;
+    format?: string;
+    preserveOriginal?: boolean;
+}
