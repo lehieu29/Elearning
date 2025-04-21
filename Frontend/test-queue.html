@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Queue Component Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .queue-container {
+      position: relative;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      min-height: 400px;
+      background-color: white;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button.danger {
+      background-color: #f44336;
+    }
+    button.danger:hover {
+      background-color: #d32f2f;
+    }
+    button.info {
+      background-color: #2196F3;
+    }
+    button.info:hover {
+      background-color: #0b7dda;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    .log-container {
+      height: 200px;
+      overflow-y: auto;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: monospace;
+      margin-top: 20px;
+    }
+    
+    /* Video Queue Component Styles */
+    .video-queue {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      max-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    .video-queue-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #f7f7f7;
+      border-radius: 8px 8px 0 0;
+    }
+    .video-queue-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin: 0;
+    }
+    .video-queue-badges {
+      display: flex;
+      gap: 4px;
+      margin-left: 8px;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 12px;
+    }
+    .badge-processing {
+      background-color: #e3f2fd;
+      color: #0d47a1;
+    }
+    .badge-done {
+      background-color: #e8f5e9;
+      color: #1b5e20;
+    }
+    .badge-failed {
+      background-color: #ffebee;
+      color: #b71c1c;
+    }
+    .video-queue-body {
+      padding: 12px;
+      overflow-y: auto;
+    }
+    .video-queue-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .video-queue-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #757575;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-queue-btn:hover {
+      color: #424242;
+    }
+    .video-queue-item {
+      background-color: #f9f9f9;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .video-queue-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .video-queue-item-title {
+      font-weight: 500;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 240px;
+    }
+    .video-queue-item-meta {
+      display: flex;
+      align-items: center;
+    }
+    .video-queue-item-duration {
+      font-size: 12px;
+      color: #757575;
+      margin-right: 8px;
+    }
+    .video-queue-item-status {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-queue-progress {
+      height: 4px;
+      width: 100%;
+      background-color: #e0e0e0;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .video-queue-progress-bar {
+      height: 100%;
+      border-radius: 2px;
+    }
+    .video-queue-progress-success {
+      background-color: #4CAF50;
+    }
+    .video-queue-progress-error {
+      background-color: #f44336;
+    }
+    .video-queue-progress-processing {
+      background-color: #2196F3;
+    }
+    .video-queue-item-message {
+      font-size: 12px;
+      color: #757575;
+      margin-top: 4px;
+    }
+    /* Animation for spinner */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #bbdefb;
+      border-top-color: #2196F3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  </style>
+</head>
+<body>
+  <h1>Video Queue Component Test</h1>
+  
+  <div class="container">
+    <div class="card">
+      <h2>Test Controls</h2>
+      <div class="controls">
+        <h3>1. Add Items to Queue</h3>
+        <button id="add-demo" class="info">Add Demo Video</button>
+        <button id="add-content" class="info">Add Content Video</button>
+        <button id="add-multiple" class="info">Add Multiple Videos</button>
+      </div>
+      
+      <div class="controls">
+        <h3>2. Update Progress</h3>
+        <button id="update-progress" class="info">Update Random Progress</button>
+        <button id="complete-random" class="info">Complete Random Item</button>
+        <button id="fail-random" class="danger">Fail Random Item</button>
+      </div>
+      
+      <div class="controls">
+        <h3>3. Queue Management</h3>
+        <button id="toggle-collapse" class="info">Toggle Collapse</button>
+        <button id="clear-queue" class="danger">Clear Queue</button>
+      </div>
+      
+      <div class="log-container" id="log"></div>
+      <button id="clear-log" style="margin-top: 10px;">Clear Log</button>
+    </div>
+    
+    <div class="card">
+      <h2>Queue Preview</h2>
+      <p>This is a simulation of the queue component as it would appear in the actual application.</p>
+      <div class="queue-container" id="queue-preview">
+        <!-- Queue component will be rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulation of VideoQueueContext
+    class VideoQueueSimulator {
+      constructor() {
+        this.queue = [];
+        this.listeners = [];
+        this.collapsed = false;
+        
+        // Render initial state
+        this.render();
+      }
+      
+      // Add video to queue
+      addToQueue(item) {
+        const newItem = {
+          ...item,
+          progress: 0,
+          message: "Waiting to process...",
+          status: "pending",
+          timestamp: Date.now(),
+        };
+        
+        this.queue.push(newItem);
+        this.notifyListeners();
+        this.render();
+        
+        return newItem;
+      }
+      
+      // Update item in queue
+      updateQueueItem(processId, data) {
+        const index = this.queue.findIndex(item => item.processId === processId);
+        if (index !== -1) {
+          this.queue[index] = { ...this.queue[index], ...data };
+          this.notifyListeners();
+          this.render();
+          return true;
+        }
+        return false;
+      }
+      
+      // Remove item from queue
+      removeFromQueue(processId) {
+        const index = this.queue.findIndex(item => item.processId === processId);
+        if (index !== -1) {
+          this.queue.splice(index, 1);
+          this.notifyListeners();
+          this.render();
+          return true;
+        }
+        return false;
+      }
+      
+      // Clear entire queue
+      clearQueue() {
+        this.queue = [];
+        this.notifyListeners();
+        this.render();
+      }
+      
+      // Toggle collapsed state
+      toggleCollapse() {
+        this.collapsed = !this.collapsed;
+        this.render();
+      }
+      
+      // Add change listener
+      addListener(callback) {
+        this.listeners.push(callback);
+      }
+      
+      // Notify all listeners
+      notifyListeners() {
+        this.listeners.forEach(callback => callback(this.queue));
+      }
+      
+      // Get random item from queue
+      getRandomItem() {
+        if (this.queue.length === 0) return null;
+        const index = Math.floor(Math.random() * this.queue.length);
+        return this.queue[index];
+      }
+      
+      // Render the queue component
+      render() {
+        const queuePreview = document.getElementById('queue-preview');
+        
+        // If queue is empty, don't render
+        if (this.queue.length === 0) {
+          queuePreview.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+              <p style="color: #757575;">Queue is empty. Add items using the controls.</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Count videos by status
+        const countByStatus = {
+          pending: this.queue.filter(item => item.status === "pending").length,
+          processing: this.queue.filter(item => item.status === "processing").length,
+          success: this.queue.filter(item => item.status === "success").length,
+          error: this.queue.filter(item => item.status === "error").length,
+        };
+        
+        // Render the queue component
+        queuePreview.innerHTML = `
+          <div class="video-queue">
+            <div class="video-queue-header">
+              <div style="display: flex; align-items: center;">
+                <h3 class="video-queue-title">Video Upload Queue</h3>
+                <div class="video-queue-badges">
+                  ${countByStatus.processing > 0 ? `
+                    <span class="badge badge-processing">
+                      ${countByStatus.processing} processing
+                    </span>
+                  ` : ''}
+                  ${countByStatus.success > 0 ? `
+                    <span class="badge badge-done">
+                      ${countByStatus.success} done
+                    </span>
+                  ` : ''}
+                  ${countByStatus.error > 0 ? `
+                    <span class="badge badge-failed">
+                      ${countByStatus.error} failed
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+              <div class="video-queue-actions">
+                <button class="video-queue-btn" id="toggle-collapse-btn">
+                  ${this.collapsed ? `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                  ` : `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  `}
+                </button>
+                <button class="video-queue-btn" id="clear-queue-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            ${!this.collapsed ? `
+              <div class="video-queue-body">
+                ${this.queue.map(item => this.renderQueueItem(item)).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+        
+        // Add event listeners
+        document.getElementById('toggle-collapse-btn').addEventListener('click', () => this.toggleCollapse());
+        document.getElementById('clear-queue-btn').addEventListener('click', () => this.clearQueue());
+      }
+      
+      // Render a single queue item
+      renderQueueItem(item) {
+        // Format file name if too long
+        const formatFileName = (name) => {
+          if (name.length <= 25) return name;
+          const ext = name.split('.').pop() || '';
+          const nameWithoutExt = name.substring(0, name.length - ext.length - 1);
+          return `${nameWithoutExt.substring(0, 20)}...${ext}`;
+        };
+        
+        // Format duration
+        const formatDuration = (seconds) => {
+          if (!seconds) return '';
+          const min = Math.floor(seconds / 60);
+          const sec = Math.floor(seconds % 60);
+          return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        };
+        
+        // Get status icon
+        const getStatusIcon = () => {
+          switch (item.status) {
+            case 'success':
+              return `
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              `;
+            case 'error':
+              return `
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              `;
+            case 'processing':
+              return `<div class="spinner"></div>`;
+            default:
+              return `
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              `;
+          }
+        };
+        
+        // Get progress bar color
+        const getProgressBarClass = () => {
+          switch (item.status) {
+            case 'success':
+              return 'video-queue-progress-success';
+            case 'error':
+              return 'video-queue-progress-error';
+            default:
+              return 'video-queue-progress-processing';
+          }
+        };
+        
+        // Render the item
+        return `
+          <div class="video-queue-item">
+            <div class="video-queue-item-header">
+              <div class="video-queue-item-title" title="${item.fileName}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px; vertical-align: -2px;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                ${formatFileName(item.fileName)}
+              </div>
+              <div class="video-queue-item-meta">
+                ${item.status === 'success' && item.result?.duration ? `
+                  <span class="video-queue-item-duration">${formatDuration(item.result.duration)}</span>
+                ` : ''}
+                <div class="video-queue-item-status">
+                  ${getStatusIcon()}
+                </div>
+              </div>
+            </div>
+            <div class="video-queue-progress">
+              <div class="video-queue-progress-bar ${getProgressBarClass()}" style="width: ${item.progress}%"></div>
+            </div>
+            <p class="video-queue-item-message">${item.message}</p>
+          </div>
+        `;
+      }
+    }
+    
+    // Initialize the simulator
+    const queueSimulator = new VideoQueueSimulator();
+    
+    // Logging function
+    const log = document.getElementById('log');
+    function addLog(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.style.borderBottom = '1px solid #eee';
+      entry.style.padding = '4px 0';
+      
+      if (type === 'error') {
+        entry.style.color = '#f44336';
+      } else if (type === 'success') {
+        entry.style.color = '#4CAF50';
+      } else if (type === 'action') {
+        entry.style.color = '#2196F3';
+      }
+      
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+    
+    // Clear log
+    document.getElementById('clear-log').addEventListener('click', () => {
+      log.innerHTML = '';
+      addLog('Log cleared');
+    });
+    
+    // Event listeners for test controls
+    
+    // 1. Add items to queue
+    document.getElementById('add-demo').addEventListener('click', () => {
+      const processId = `vid_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+      const newItem = queueSimulator.addToQueue({
+        processId,
+        fileName: `demo-video-${Math.floor(Math.random() * 100)}.mp4`,
+        uploadType: 'demo',
+      });
+      
+      addLog(`Added demo video to queue: ${newItem.fileName} (${newItem.processId})`, 'action');
+    });
+    
+    document.getElementById('add-content').addEventListener('click', () => {
+      const processId = `vid_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+      const contentIndex = Math.floor(Math.random() * 5);
+      const newItem = queueSimulator.addToQueue({
+        processId,
+        fileName: `content-video-${Math.floor(Math.random() * 100)}.mp4`,
+        uploadType: 'content',
+        contentIndex,
+      });
+      
+      addLog(`Added content video to queue: ${newItem.fileName} (index: ${contentIndex})`, 'action');
+    });
+    
+    document.getElementById('add-multiple').addEventListener('click', () => {
+      const count = Math.floor(Math.random() * 3) + 2; // 2-4 videos
+      for (let i = 0; i < count; i++) {
+        const processId = `vid_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+        const isContent = Math.random() > 0.5;
+        const newItem = queueSimulator.addToQueue({
+          processId,
+          fileName: `${isContent ? 'content' : 'demo'}-video-${Math.floor(Math.random() * 100)}.mp4`,
+          uploadType: isContent ? 'content' : 'demo',
+          contentIndex: isContent ? Math.floor(Math.random() * 5) : undefined,
+        });
+      }
+      
+      addLog(`Added ${count} videos to queue`, 'action');
+    });
+    
+    // 2. Update progress
+    document.getElementById('update-progress').addEventListener('click', () => {
+      const item = queueSimulator.getRandomItem();
+      if (!item) {
+        addLog('No items in queue to update', 'error');
+        return;
+      }
+      
+      // Skip if already completed
+      if (item.status === 'success' || item.status === 'error') {
+        addLog(`Item ${item.processId} is already in final state, skipping`, 'error');
+        return;
+      }
+      
+      // Random progress between current and 90%
+      const currentProgress = item.progress || 0;
+      const newProgress = Math.min(90, currentProgress + Math.floor(Math.random() * 30) + 10);
+      const updated = queueSimulator.updateQueueItem(item.processId, {
+        progress: newProgress,
+        status: 'processing',
+        message: `Processing... ${newProgress}% complete`,
+      });
+      
+      if (updated) {
+        addLog(`Updated ${item.fileName} progress to ${newProgress}%`, 'action');
+      } else {
+        addLog(`Failed to update ${item.processId}`, 'error');
+      }
+    });
+    
+    document.getElementById('complete-random').addEventListener('click', () => {
+      const item = queueSimulator.getRandomItem();
+      if (!item) {
+        addLog('No items in queue to complete', 'error');
+        return;
+      }
+      
+      // Skip if already completed
+      if (item.status === 'success' || item.status === 'error') {
+        addLog(`Item ${item.processId} is already in final state, skipping`, 'error');
+        return;
+      }
+      
+      const updated = queueSimulator.updateQueueItem(item.processId, {
+        progress: 100,
+        status: 'success',
+        message: 'Upload completed successfully!',
+        result: {
+          fileName: item.fileName,
+          publicId: `video/courses/${item.processId}`,
+          url: `https://example.com/videos/${item.processId}`,
+          duration: Math.floor(Math.random() * 300) + 60, // 1-6 minutes
+          format: 'mp4',
+        },
+      });
+      
+      if (updated) {
+        addLog(`Completed ${item.fileName} successfully`, 'success');
+      } else {
+        addLog(`Failed to complete ${item.processId}`, 'error');
+      }
+    });
+    
+    document.getElementById('fail-random').addEventListener('click', () => {
+      const item = queueSimulator.getRandomItem();
+      if (!item) {
+        addLog('No items in queue to fail', 'error');
+        return;
+      }
+      
+      // Skip if already completed
+      if (item.status === 'success' || item.status === 'error') {
+        addLog(`Item ${item.processId} is already in final state, skipping`, 'error');
+        return;
+      }
+      
+      const updated = queueSimulator.updateQueueItem(item.processId, {
+        progress: 100,
+        status: 'error',
+        message: 'Upload failed',
+        result: {
+          fileName: item.fileName,
+          error: 'Processing error: Could not generate subtitles',
+        },
+      });
+      
+      if (updated) {
+        addLog(`Failed ${item.fileName} with error`, 'error');
+      } else {
+        addLog(`Could not update ${item.processId}`, 'error');
+      }
+    });
+    
+    // 3. Queue management
+    document.getElementById('toggle-collapse').addEventListener('click', () => {
+      queueSimulator.toggleCollapse();
+      addLog(`${queueSimulator.collapsed ? 'Collapsed' : 'Expanded'} queue`, 'action');
+    });
+    
+    document.getElementById('clear-queue').addEventListener('click', () => {
+      queueSimulator.clearQueue();
+      addLog('Cleared all items from queue', 'action');
+    });
+    
+    // Add a listener to log queue changes
+    queueSimulator.addListener((queue) => {
+      console.log('Queue updated:', queue);
+    });
+    
+    // Add some initial items for demonstration
+    setTimeout(() => {
+      // Add a demo video
+      const demoProcessId = `vid_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+      queueSimulator.addToQueue({
+        processId: demoProcessId,
+        fileName: 'welcome-video.mp4',
+        uploadType: 'demo',
+      });
+      
+      // Simulate progress updates
+      setTimeout(() => {
+        queueSimulator.updateQueueItem(demoProcessId, {
+          progress: 30,
+          status: 'processing',
+          message: 'Processing... 30% complete',
+        });
+      }, 1500);
+      
+      // Add instructions
+      addLog('Welcome to the Video Queue Component Test');
+      addLog('Use the controls on the left to interact with the queue');
+      addLog('The right panel shows a preview of the queue component');
+      addLog('---');
+      addLog('Added a demo video to get started', 'action');
+    }, 500);
+  </script>
+</body>
+</html>

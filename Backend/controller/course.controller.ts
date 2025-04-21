@@ -2,7 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/ErrorHandler";
 import cloudinary from "cloudinary";
-import fs from "fs";  // Thêm import này
+import fs from "fs";
+import { emitVideoProgress } from "../socketServer";  // Thêm import này
 import { createCourse, getAllCoursesService } from "../services/course.service";
 import CourseModel from "../models/course.model";
 import { redis } from "../utils/redis";
@@ -19,28 +20,6 @@ import { processVideoAndGenerateSubtitlesOptimized, cleanupTempFiles } from "../
 // upload video handler
 export const uploadVideoHandler = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
-    // Thời gian bắt đầu
-    const startTime = Date.now();
-
-    // Theo dõi tiến độ
-    let lastProgressUpdate = 0;
-    let lastMessage = '';
-
-    // Hàm cập nhật trạng thái xử lý
-    const updateProcessStatus = (uploadId: string, progress: number, message: string) => {
-      // Giới hạn cập nhật quá nhiều lần
-      const now = Date.now();
-      if (now - lastProgressUpdate < 1000 && message === lastMessage) {
-        return;
-      }
-
-      lastProgressUpdate = now;
-      lastMessage = message;
-
-      // Trong môi trường thực tế, bạn có thể lưu trạng thái vào Redis hoặc database
-      console.log(`[${uploadId}] ${progress}%: ${message}`);
-    };
-
     try {
       const file = req.file;
       if (!file) {
@@ -49,8 +28,9 @@ export const uploadVideoHandler = CatchAsyncError(
 
       // Tạo ID xử lý duy nhất
       const processId = `vid_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const fileName = file.originalname;
 
-      console.log(`[${processId}] Processing file: ${file.originalname}, Size: ${file.size}, Type: ${file.mimetype}`);
+      console.log(`[${processId}] Processing file: ${fileName}, Size: ${file.size}, Type: ${file.mimetype}`);
 
       // Kiểm tra file tồn tại trên disk
       const filePath = file.path;
@@ -69,15 +49,19 @@ export const uploadVideoHandler = CatchAsyncError(
       // Xác định loại nội dung video
       const contentType = req.body.contentType || 'lecture';
 
-      // Thông báo đang xử lý video
+      // Thông báo đang bắt đầu xử lý video và trả về processId ngay lập tức
       res.status(202).json({
         success: true,
-        message: 'Video uploaded, generating subtitles and processing. Please wait...',
+        message: 'Video upload started, processing in background',
         processId: processId,
+        fileName: fileName
       });
 
+      // Phát sóng trạng thái bắt đầu
+      emitVideoProgress(processId, 0, 'Upload started', { fileName });
+
       // Xử lý video bất đồng bộ
-      processVideoAsync(processId, filePath, contentType);
+      processVideoAsync(processId, filePath, fileName, contentType);
 
     } catch (error: any) {
       console.error(`Video upload error: ${error.message}`);
@@ -96,7 +80,7 @@ export const uploadVideoHandler = CatchAsyncError(
     }
 
     // Hàm xử lý video bất đồng bộ
-    async function processVideoAsync(processId: string, filePath: string, contentType: string) {
+    async function processVideoAsync(processId: string, filePath: string, fileName: string, contentType: string) {
       // Đường dẫn tạm thời cho các file xử lý
       const tempDir = path.join(os.tmpdir(), 'video-processing', processId);
       if (!fs.existsSync(tempDir)) {
@@ -105,18 +89,19 @@ export const uploadVideoHandler = CatchAsyncError(
 
       try {
         // 1. Tạo phụ đề và gắn vào video
-        updateProcessStatus(processId, 5, 'Bắt đầu xử lý video và tạo phụ đề...');
+        emitVideoProgress(processId, 5, 'Bắt đầu xử lý video và tạo phụ đề...', { fileName });
 
         const { outputVideoPath } = await processVideoAndGenerateSubtitlesOptimized(
           filePath,
           { contentType },
           (progress, message) => {
-            updateProcessStatus(processId, progress, message);
+            // Cập nhật tiến độ qua Socket.IO
+            emitVideoProgress(processId, progress, message, { fileName });
           }
         );
 
         // 2. Upload video có phụ đề lên Cloudinary
-        updateProcessStatus(processId, 98, 'Đang tải video lên Cloudinary...');
+        emitVideoProgress(processId, 85, 'Đang tải video lên Cloudinary...', { fileName });
 
         const result = await cloudinary.v2.uploader.upload(outputVideoPath, {
           resource_type: "video",
@@ -124,7 +109,14 @@ export const uploadVideoHandler = CatchAsyncError(
           timeout: 600000, // 10 phút timeout
         });
 
-        updateProcessStatus(processId, 100, 'Hoàn thành xử lý và tải lên!');
+        // Thành công - phát sóng kết quả cuối cùng với thông tin video
+        emitVideoProgress(processId, 100, 'Hoàn thành xử lý và tải lên!', { 
+          fileName,
+          publicId: result.public_id,
+          url: result.secure_url,
+          duration: result.duration,
+          format: result.format
+        });
 
         console.log(`[${processId}] Cloudinary upload success: ${result.public_id}`);
 
@@ -141,17 +133,16 @@ export const uploadVideoHandler = CatchAsyncError(
         // 4. Dọn dẹp files
         cleanupTempFiles([filePath, tempDir]);
 
-        // 5. Tính toán thời gian xử lý
-        const processingTime = (Date.now() - startTime) / 1000;
-        console.log(`[${processId}] Total processing time: ${processingTime.toFixed(2)} seconds`);
+        // 5. Tính toán thời gian hoàn thành
+        console.log(`[${processId}] Processing completed successfully`);
 
       } catch (processingError: any) {
         console.error(`[${processId}] Video processing error: ${processingError.message}`);
-        updateProcessStatus(processId, 50, `Gặp lỗi khi xử lý: ${processingError.message}`);
+        emitVideoProgress(processId, 50, `Gặp lỗi khi xử lý: ${processingError.message}`, { fileName });
 
         // Nếu xử lý phụ đề thất bại, vẫn upload video gốc lên Cloudinary
         try {
-          updateProcessStatus(processId, 60, 'Đang tải video gốc lên Cloudinary...');
+          emitVideoProgress(processId, 60, 'Đang tải video gốc lên Cloudinary...', { fileName });
 
           const result = await cloudinary.v2.uploader.upload(filePath, {
             resource_type: "video",
@@ -159,7 +150,14 @@ export const uploadVideoHandler = CatchAsyncError(
             timeout: 600000,
           });
 
-          updateProcessStatus(processId, 100, 'Đã tải lên video gốc (không có phụ đề)');
+          emitVideoProgress(processId, 100, 'Đã tải lên video gốc (không có phụ đề)', { 
+            fileName,
+            publicId: result.public_id,
+            url: result.secure_url,
+            duration: result.duration,
+            format: result.format,
+            warning: 'Video uploaded without subtitles due to processing error'
+          });
 
           console.log(`[${processId}] Fallback upload success: ${result.public_id}`);
 
@@ -178,7 +176,10 @@ export const uploadVideoHandler = CatchAsyncError(
 
         } catch (fallbackError: any) {
           console.error(`[${processId}] Fallback upload error: ${fallbackError.message}`);
-          updateProcessStatus(processId, 100, `Thất bại hoàn toàn: ${fallbackError.message}`);
+          emitVideoProgress(processId, 100, `Thất bại hoàn toàn: ${fallbackError.message}`, { 
+            fileName,
+            error: fallbackError.message
+          });
 
           // Lưu thông tin lỗi
           // await redis.set(`video_process:${processId}`, JSON.stringify({

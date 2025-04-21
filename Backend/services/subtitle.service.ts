@@ -11,6 +11,7 @@ import { Subtitle, RawSubtitle, SegmentInfo, VideoMetadata, Segment, GeminiApiOp
 
 // Cấu hình đường dẫn FFmpeg
 ffmpeg.setFfmpegPath(ffmpegPath.path);
+ffmpeg.setFfprobePath(process.env.FFPROBE_PATH || ffmpegPath.path); // Set ffprobe path if needed
 
 // Khởi tạo Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');

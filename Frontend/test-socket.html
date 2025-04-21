@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.IO Test Client</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 16px;
+      background-color: #f9f9f9;
+    }
+
+    .status {
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .connected {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .disconnected {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .log-container {
+      height: 200px;
+      overflow-y: auto;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: monospace;
+    }
+
+    button {
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0069d9;
+    }
+
+    input {
+      padding: 8px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Socket.IO Test Client</h1>
+
+    <div class="card">
+      <h2>Connection Status</h2>
+      <div id="connection-status" class="status disconnected">Disconnected</div>
+      <div>
+        <label for="server-url">Server URL:</label>
+        <input type="text" id="server-url" value="http://localhost:8001" />
+      </div>
+      <div style="margin-top: 10px;">
+        <button id="connect-btn">Connect</button>
+        <button id="disconnect-btn" disabled>Disconnect</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Test Video Progress Event</h2>
+      <p>Kiểm tra sự kiện cập nhật tiến độ video</p>
+      <div>
+        <label for="process-id">Process ID:</label>
+        <input type="text" id="process-id" value="vid_test_123" />
+      </div>
+      <div style="margin-top: 10px;">
+        <button id="send-progress-10" disabled>Gửi 10%</button>
+        <button id="send-progress-50" disabled>Gửi 50%</button>
+        <button id="send-progress-100" disabled>Gửi 100%</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Event Log</h2>
+      <div id="log" class="log-container"></div>
+      <button id="clear-log" style="margin-top: 10px;">Clear Log</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+  <script>
+    let socket;
+    const log = document.getElementById('log');
+    const connectionStatus = document.getElementById('connection-status');
+    const connectBtn = document.getElementById('connect-btn');
+    const disconnectBtn = document.getElementById('disconnect-btn');
+    const sendProgress10Btn = document.getElementById('send-progress-10');
+    const sendProgress50Btn = document.getElementById('send-progress-50');
+    const sendProgress100Btn = document.getElementById('send-progress-100');
+    const serverUrlInput = document.getElementById('server-url');
+    const processIdInput = document.getElementById('process-id');
+    const clearLogBtn = document.getElementById('clear-log');
+
+    // Add log entry
+    function addLog(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.style.borderBottom = '1px solid #dee2e6';
+      entry.style.padding = '4px 0';
+
+      if (type === 'error') {
+        entry.style.color = '#dc3545';
+      } else if (type === 'success') {
+        entry.style.color = '#28a745';
+      } else if (type === 'event') {
+        entry.style.color = '#6f42c1';
+      }
+
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Connect to socket server
+    connectBtn.addEventListener('click', () => {
+      const serverUrl = serverUrlInput.value.trim();
+      if (!serverUrl) {
+        addLog('Please enter a valid server URL', 'error');
+        return;
+      }
+
+      try {
+        addLog(`Connecting to ${serverUrl}...`);
+        socket = io(serverUrl, { 
+          transports: ['polling', 'websocket'], // Thử polling trước, sau đó websocket
+          withCredentials: true
+        });
+
+        socket.on('connect', () => {
+          connectionStatus.textContent = `Connected (ID: ${socket.id})`;
+          connectionStatus.classList.remove('disconnected');
+          connectionStatus.classList.add('connected');
+
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          sendProgress10Btn.disabled = false;
+          sendProgress50Btn.disabled = false;
+          sendProgress100Btn.disabled = false;
+
+          addLog(`Socket connected with ID: ${socket.id}`, 'success');
+        });
+
+        socket.on('disconnect', () => {
+          connectionStatus.textContent = 'Disconnected';
+          connectionStatus.classList.remove('connected');
+          connectionStatus.classList.add('disconnected');
+
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          sendProgress10Btn.disabled = true;
+          sendProgress50Btn.disabled = true;
+          sendProgress100Btn.disabled = true;
+
+          addLog('Socket disconnected', 'error');
+        });
+
+        socket.on('connect_error', (err) => {
+          addLog(`Connection error: ${err.message}`, 'error');
+        });
+
+        // Listen for test connection event
+        socket.on('testConnection', (data) => {
+          addLog(`Received testConnection: ${JSON.stringify(data)}`, 'event');
+        });
+
+        // Listen for test response
+        socket.on('testResponse', (data) => {
+          addLog(`Received testResponse: ${JSON.stringify(data)}`, 'event');
+        });
+
+      } catch (error) {
+        addLog(`Error initializing socket: ${error.message}`, 'error');
+      }
+    });
+
+    // Disconnect from socket server
+    disconnectBtn.addEventListener('click', () => {
+      if (socket) {
+        socket.disconnect();
+        addLog('Manually disconnected from server');
+      }
+    });
+
+    // Send progress events
+    function sendProgressEvent(progress) {
+      if (!socket || !socket.connected) {
+        addLog('Socket not connected', 'error');
+        return;
+      }
+
+      const processId = processIdInput.value.trim();
+      if (!processId) {
+        addLog('Please enter a Process ID', 'error');
+        return;
+      }
+
+      // Prepare message data
+      const message = progress === 100
+        ? 'Hoàn thành xử lý và tải lên!'
+        : `Đang xử lý... ${progress}%`;
+
+      // Prepare result for 100% only
+      const result = progress === 100
+        ? {
+          fileName: 'test-video.mp4',
+          publicId: 'video/courses/test_' + Date.now(),
+          url: 'https://example.com/test-video.mp4',
+          duration: 120, // 2 minutes
+          format: 'mp4'
+        }
+        : undefined;
+
+      // Emit videoProgress event
+      socket.emit('videoProgress', {
+        processId,
+        progress,
+        message,
+        result,
+        timestamp: Date.now()
+      });
+
+      addLog(`Sent progress ${progress}% for processId: ${processId}`);
+    }
+
+    sendProgress10Btn.addEventListener('click', () => sendProgressEvent(10));
+    sendProgress50Btn.addEventListener('click', () => sendProgressEvent(50));
+    sendProgress100Btn.addEventListener('click', () => sendProgressEvent(100));
+
+    // Clear log
+    clearLogBtn.addEventListener('click', () => {
+      log.innerHTML = '';
+      addLog('Log cleared');
+    });
+  </script>
+</body>
+
+</html>

@@ -6,6 +6,7 @@ import { AiOutlineDelete, AiOutlinePlusCircle } from "react-icons/ai";
 import { BsLink45Deg, BsPencil } from "react-icons/bs";
 import { MdOutlineKeyboardArrowDown } from "react-icons/md";
 import { useUploadVideoMutation } from "@/redux/features/courses/coursesApi";
+import { useVideoQueue } from "@/app/contexts/VideoQueueContext";
 
 type Props = {
   active: number;
@@ -27,9 +28,12 @@ const CourseContent: FC<Props> = ({
   );
 
   const [activeSection, setActiveSection] = useState(1);
-  const [uploadVideo, { isLoading, isSuccess, error }] = useUploadVideoMutation();
+  const [uploadVideo, { isLoading }] = useUploadVideoMutation();
   const [currentUploadIndex, setCurrentUploadIndex] = useState(-1);
   const [uploadedFileNames, setUploadedFileNames] = useState(Array(courseContentData.length).fill(""));
+  
+  // Thêm videoQueue hook
+  const { addToQueue, setVideoUrlFromQueue } = useVideoQueue();
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
@@ -54,64 +58,58 @@ const CourseContent: FC<Props> = ({
   };
 
   const handleVideoUpload = (file: File, index: number) => {
-    if (!file) return;
+  if (!file) return;
 
-    // Log information for debugging
-    console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+  // Log information for debugging
+  console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
 
-    // Check file size and format
-    if (file.size === 0) {
-      toast.error("File is empty, please select another file", { duration: 4000 });
-      return;
-    }
+  // Check file size and format
+  if (file.size === 0) {
+  toast.error("File is empty, please select another file", { duration: 4000 });
+  return;
+  }
 
-    if (!file.type.startsWith('video/')) {
-      toast.error("Please select a valid video file", { duration: 4000 });
-      return;
-    }
+  if (!file.type.startsWith('video/')) {
+  toast.error("Please select a valid video file", { duration: 4000 });
+  return;
+  }
 
-    // Update uploading status
-    setCurrentUploadIndex(index);
+  // Update uploading status
+  setCurrentUploadIndex(index);
 
-    // Update the file name for this index
-    const updatedFileNames = [...uploadedFileNames];
-    updatedFileNames[index] = file.name;
-    setUploadedFileNames(updatedFileNames);
+  // Update the file name for this index
+  const updatedFileNames = [...uploadedFileNames];
+  updatedFileNames[index] = file.name;
+  setUploadedFileNames(updatedFileNames);
 
-    // Show loading toast (max 10 seconds)
-    const loadingToast = toast.loading("Uploading video...", { duration: 10000 });
+  // Show loading toast
+  const loadingToast = toast.loading("Starting upload...", { duration: 5000 });
 
-    uploadVideo(file)
-      .unwrap()
-      .then((result) => {
-        console.log('Upload successful:', result);
-        toast.dismiss(loadingToast);
-        toast.success("Video uploaded successfully!", { duration: 3000 });
-
-        // Update the videoUrl with the publicId from the response
-        const updatedData = [...courseContentData];
-        updatedData[index].videoUrl = result.publicId;
-
-        // Calculate video length in minutes from duration (in seconds)
-        if (result.duration !== undefined) {
-          // Convert duration from seconds to minutes, rounding up
-          const durationInMinutes = Math.ceil(result.duration / 60);
-          updatedData[index].videoLength = durationInMinutes.toString();
-          console.log('Video duration set to:', durationInMinutes, 'minutes (from', result.duration, 'seconds)');
-        }
-
-        setCourseContentData(updatedData);
-      })
-      .catch((error) => {
-        console.error('Upload error:', error);
-        toast.dismiss(loadingToast);
+  uploadVideo(file)
+  .unwrap()
+  .then((result) => {
+  console.log('Upload started:', result);
+  toast.dismiss(loadingToast);
+  toast.success("Upload started! You can continue editing", { duration: 3000 });
+  
+  // Thêm video vào queue
+  addToQueue({
+    processId: result.processId,
+          fileName: file.name,
+    uploadType: "content",
+    contentIndex: index,
+  });
+  })
+  .catch((error) => {
+  console.error('Upload error:', error);
+  toast.dismiss(loadingToast);
         toast.error(error.data?.message || "Unknown error when uploading video", { duration: 5000 });
 
-        // Reset the file name for this index
-        const updatedFileNames = [...uploadedFileNames];
-        updatedFileNames[index] = "";
-        setUploadedFileNames(updatedFileNames);
-      });
+    // Reset the file name for this index
+    const updatedFileNames = [...uploadedFileNames];
+  updatedFileNames[index] = "";
+  setUploadedFileNames(updatedFileNames);
+  });
   };
 
   const newContentHandler = (item: any) => {
@@ -174,13 +172,30 @@ const CourseContent: FC<Props> = ({
   };
 
   const handleOptions = () => {
+    // Kiểm tra chỉ có title và description, bỏ kiểm tra videoUrl
     if (
       courseContentData[courseContentData.length - 1].title === "" ||
-      courseContentData[courseContentData.length - 1].description === "" ||
-      courseContentData[courseContentData.length - 1].videoUrl === ""
+      courseContentData[courseContentData.length - 1].description === ""
     ) {
-      toast.error("Section can't be empty!");
+      toast.error("Please fill title and description fields!");
     } else {
+      // Cập nhật videoUrl cho tất cả các video đã upload
+      const updatedData = [...courseContentData];
+      
+      updatedData.forEach((item, index) => {
+        const { publicId, duration } = setVideoUrlFromQueue("content", index);
+        if (publicId && !item.videoUrl) {
+          updatedData[index].videoUrl = publicId;
+          
+          // Cập nhật videoLength nếu có duration
+          if (duration) {
+            const durationInMinutes = Math.ceil(duration / 60);
+            updatedData[index].videoLength = durationInMinutes.toString();
+          }
+        }
+      });
+      
+      setCourseContentData(updatedData);
       toast.success("Course content saved");
       setActive(active + 1);
       handlleCourseSubmit();

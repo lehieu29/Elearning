@@ -7,6 +7,8 @@ import { Toaster } from "react-hot-toast";
 import { Providers } from "./Provider";
 import { SessionProvider } from "next-auth/react";
 import React, { FC, useEffect } from "react";
+import { VideoQueueProvider } from "./contexts/VideoQueueContext";
+import VideoQueue from "./components/VideoQueue/VideoQueue";
 import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
 import Loader from "./components/Loader/Loader";
 import socketIO from "socket.io-client";
@@ -61,7 +63,9 @@ const Custom: FC<{ children: React.ReactNode }> = ({ children }) => {
   }, []);
 
   return (
-    <div>{isLoading ? <Loader /> : <div>{children} </div>}</div>
+    <VideoQueueProvider>
+      <div>{isLoading ? <Loader /> : <div>{children} <VideoQueue /></div>}</div>
+    </VideoQueueProvider>
   );
 
   // <div>{isLoading ? <Loader /> : <div>{children} </div>}</div>;

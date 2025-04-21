@@ -30,6 +30,8 @@ export const coursesApi = apiSlice.injectEndpoints({
           credentials: "include" as const,
         };
       },
+      // Lưu ý: không cần cung cấp invalidatesTags hoặc onQueryStarted ở đây
+      // vì chúng ta xử lý update thông qua VideoQueueContext
     }),
     // get all course info only for admin
     getAllCourses: builder.query({

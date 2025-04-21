@@ -4,6 +4,7 @@ import { useUploadVideoMutation } from "@/redux/features/courses/coursesApi";
 import { useGetHeroDataQuery } from "@/redux/features/layout/layoutApi";
 import React, { FC, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useVideoQueue } from "@/app/contexts/VideoQueueContext";
 
 type Props = {
   courseInfo: any;
@@ -18,11 +19,14 @@ const CourseInformation: FC<Props> = ({
   active,
   setActive,
 }) => {
-  const [uploadVideo, { isLoading, isSuccess, error }] = useUploadVideoMutation();
+  const [uploadVideo, { isLoading }] = useUploadVideoMutation();
   const [uploadedFileName, setUploadedFileName] = useState("");
   const [dragging, setDragging] = useState(false);
   const { data } = useGetHeroDataQuery("Categories", {});
   const [categories, setCategories] = useState([]);
+  
+  // Thêm videoQueue hook
+  const { addToQueue, setVideoUrlFromQueue } = useVideoQueue();
 
   useEffect(() => {
     if (data) {
@@ -33,7 +37,7 @@ const CourseInformation: FC<Props> = ({
   const handleSubmit = (e: any) => {
     e.preventDefault();
 
-    // Complete validation for all required fields
+    // Bỏ validate demoUrl - chỉ validate các trường thông tin cơ bản
     if (!courseInfo.name || courseInfo.name.trim() === "") {
       toast.error("Please enter course name");
       return;
@@ -59,14 +63,15 @@ const CourseInformation: FC<Props> = ({
       return;
     }
 
-    if (!courseInfo.demoUrl) {
-      toast.error("Please upload a demo video");
-      return;
-    }
-
     if (!courseInfo.thumbnail) {
       toast.error("Please upload a thumbnail image");
       return;
+    }
+
+    // Cập nhật demoUrl từ video đã upload (nếu có)
+    const { publicId } = setVideoUrlFromQueue("demo");
+    if (publicId && !courseInfo.demoUrl) {
+      setCourseInfo({ ...courseInfo, demoUrl: publicId });
     }
 
     // Optional validation for categories if needed
@@ -141,18 +146,21 @@ const CourseInformation: FC<Props> = ({
     // Lưu tên file
     setUploadedFileName(file.name);
 
-    // Hiển thị toast uploading tối đa 10s
-    const loadingToast = toast.loading("Uploading video...", { duration: 10000 });
+    // Hiển thị toast uploading
+    const loadingToast = toast.loading("Starting upload...", { duration: 5000 });
 
     uploadVideo(file)
       .unwrap()
       .then((result) => {
-        console.log('Upload successful:', result);
+        console.log('Upload started:', result);
         toast.dismiss(loadingToast);
-        toast.success("Video uploaded successfully!", { duration: 3000 });
-        setCourseInfo({
-          ...courseInfo,
-          demoUrl: result.publicId
+        toast.success("Upload started! You can continue editing while it processes", { duration: 3000 });
+        
+        // Thêm video vào queue
+        addToQueue({
+          processId: result.processId,
+          fileName: file.name,
+          uploadType: "demo",
         });
       })
       .catch((error) => {

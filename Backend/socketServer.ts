@@ -1,8 +1,11 @@
 import { Server as SocketIOServer } from "socket.io";
 import http from "http";
 
+// Khai báo biến để export cho các module khác sử dụng
+let io: SocketIOServer;
+
 export const initSocketServer = (server: http.Server) => {
-  const io = new SocketIOServer(server);
+  io = new SocketIOServer(server);
 
   io.on("connection", (socket) => {
     console.log("A user connected");
@@ -16,5 +19,23 @@ export const initSocketServer = (server: http.Server) => {
     socket.on("disconnect", () => {
       console.log("A user disconnected");
     });
+  });
+
+  return io;
+};
+
+// Thêm hàm mới để phát sóng cập nhật tiến độ video
+export const emitVideoProgress = (processId: string, progress: number, message: string, result?: any) => {
+  if (!io) {
+    console.error("Socket.IO not initialized");
+    return;
+  }
+
+  io.emit("videoProgress", {
+    processId,
+    progress,
+    message,
+    result,
+    timestamp: Date.now(),
   });
 };

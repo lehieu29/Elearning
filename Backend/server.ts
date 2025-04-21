@@ -13,7 +13,8 @@ cloudinary.config({
   api_key: process.env.CLOUD_API_KEY,
   api_secret: process.env.CLOUD_SECRET_KEY,
 });
-initSocketServer(server);
+// Initialize Socket.IO và lưu lại io instance
+const io = initSocketServer(server);
 server.listen(process.env.PORT, () => {
   console.log("Server is connected with port ", process.env.PORT);
   connectDB();
