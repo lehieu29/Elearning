@@ -1,0 +1,309 @@
+
+D:\PROJECT\ELEARNING
+|   action.md
+|   courses.json
+|   README.md
+|   structure.txt
+|   
++---Backend
+|   |   .env
+|   |   .env.example
+|   |   .gitignore
+|   |   app.ts
+|   |   package-lock.json
+|   |   package.json
+|   |   README.md
+|   |   server.ts
+|   |   socketServer.ts
+|   |   tsconfig.json
+|   |   
+|   +---@types
+|   |       custom.d.ts
+|   |       
+|   +---controller
+|   |       analytics.controller.ts
+|   |       course.controller.ts
+|   |       import.txt
+|   |       layout.controller.ts
+|   |       notification.controller.ts
+|   |       order.controller.ts
+|   |       user.controller.ts
+|   |       
+|   +---mails
+|   |       activation-mail.ejs
+|   |       order-confirmation.ejs
+|   |       question-reply.ejs
+|   |       
+|   +---middleware
+|   |       auth.ts
+|   |       catchAsyncError.ts
+|   |       error.ts
+|   |       upload.ts
+|   |       
+|   +---models
+|   |       ai.model.ts
+|   |       course.model.ts
+|   |       layout.model.ts
+|   |       notification.model.ts
+|   |       order.model.ts
+|   |       user.model.ts  
+|   +---routes
+|   |       analytics.route.ts
+|   |       course.route.ts
+|   |       layout.route.ts
+|   |       notification.route.ts
+|   |       order.route.ts
+|   |       user.route.ts
+|   |       
+|   +---services
+|   |       course.service.ts
+|   |       order.service.ts
+|   |       user.service.ts
+|   |       
+|   +---uploads
+|   \---utils
+|           analytics.generator.ts
+|           db.ts
+|           ErrorHandler.ts
+|           jwt.ts
+|           redis.ts
+|           sendMail.ts
+|           
+\---Frontend
+    |   .env
+    |   .env.example
+    |   .eslintrc.json
+    |   .gitignore
+    |   next-env.d.ts
+    |   next.config.mjs
+    |   package-lock.json
+    |   package.json
+    |   postcss.config.js
+    |   README.md
+    |   tailwind.config.ts
+    |   tsconfig.json
+    |   
+    +---app
+    |   |   favicon.ico
+    |   |   globals.css
+    |   |   layout.tsx
+    |   |   page.tsx
+    |   |   Provider.tsx
+    |   |   
+    |   +---about
+    |   |       About.tsx
+    |   |       page.tsx
+    |   |       
+    |   +---admin
+    |   |   |   page.tsx
+    |   |   |   
+    |   |   +---categories
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   +---courses
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   +---courses-analytics
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   +---create-course
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   +---edit-course
+    |   |   |   \---[id]
+    |   |   |           page.tsx
+    |   |   |           
+    |   |   +---faq
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   +---hero
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   +---invoices
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   +---orders-analytics
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   +---team
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   +---users
+    |   |   |       page.tsx
+    |   |   |       
+    |   |   \---users-analytics
+    |   |           page.tsx
+    |   |           
+    |   +---components
+    |   |   |   Footer.tsx
+    |   |   |   Header.tsx
+    |   |   |   
+    |   |   +---Admin
+    |   |   |   |   DashboardHeader.tsx
+    |   |   |   |   DashboardHero.tsx
+    |   |   |   |   
+    |   |   |   +---Analytics
+    |   |   |   |       CourseAnalytics.tsx
+    |   |   |   |       OrdersAnalytics.tsx
+    |   |   |   |       UserAnalytics.tsx
+    |   |   |   |       
+    |   |   |   +---Course
+    |   |   |   |       AllCourses.tsx
+    |   |   |   |       CourseContent.tsx
+    |   |   |   |       CourseData.tsx
+    |   |   |   |       CourseInformation.tsx
+    |   |   |   |       CourseOptions.tsx
+    |   |   |   |       CoursePreview.tsx
+    |   |   |   |       CreateCourse.tsx
+    |   |   |   |       EditCourse.tsx
+    |   |   |   |       
+    |   |   |   +---Customization
+    |   |   |   |       EditCategories.tsx
+    |   |   |   |       EditFaq.tsx
+    |   |   |   |       EditHero.tsx
+    |   |   |   |       
+    |   |   |   +---Order
+    |   |   |   |       AllInvoices.tsx
+    |   |   |   |       
+    |   |   |   +---sidebar
+    |   |   |   |       AdminSidebar.tsx
+    |   |   |   |       Icon.tsx
+    |   |   |   |       
+    |   |   |   +---Users
+    |   |   |   |       AllUsers.tsx
+    |   |   |   |       
+    |   |   |   \---Widgets
+    |   |   |           DashboardWidgets.tsx
+    |   |   |           
+    |   |   +---AI
+    |   |   |       AiChat.tsx
+    |   |   |       
+    |   |   +---Auth
+    |   |   |       Login.tsx
+    |   |   |       SignUp.tsx
+    |   |   |       Verification.tsx
+    |   |   |       
+    |   |   +---Course
+    |   |   |       CourseCard.tsx
+    |   |   |       CourseContent.tsx
+    |   |   |       CourseContentList.tsx
+    |   |   |       CourseContentMedia.tsx
+    |   |   |       CourseDetails.tsx
+    |   |   |       CourseDetailsPage.tsx
+    |   |   |       
+    |   |   +---FAQ
+    |   |   |       FAQ.tsx
+    |   |   |       
+    |   |   +---Loader
+    |   |   |       Loader.css
+    |   |   |       Loader.tsx
+    |   |   |       
+    |   |   +---Payment
+    |   |   |       CheckOutForm.tsx
+    |   |   |       
+    |   |   +---Profile
+    |   |   |       ChangePassword.tsx
+    |   |   |       Profile.tsx
+    |   |   |       ProfileInfo.tsx
+    |   |   |       SideBarProfile.tsx
+    |   |   |       
+    |   |   +---Review
+    |   |   |       ReviewCard.tsx
+    |   |   |       
+    |   |   \---Route
+    |   |           Courses.tsx
+    |   |           Hero.tsx
+    |   |           Reviews.tsx
+    |   |           
+    |   +---course
+    |   |   \---[id]
+    |   |           page.tsx
+    |   |           
+    |   +---course-access
+    |   |   +---ai
+    |   |   |   \---[id]
+    |   |   |           page.tsx
+    |   |   |           
+    |   |   \---[id]
+    |   |           page.tsx
+    |   |           
+    |   +---courses
+    |   |       page.tsx
+    |   |       
+    |   +---faq
+    |   |       page.tsx
+    |   |       
+    |   +---hooks
+    |   |       adminProtected.tsx
+    |   |       useProtected.tsx
+    |   |       userAuth.tsx
+    |   |       
+    |   +---policy
+    |   |       page.tsx
+    |   |       Policy.tsx
+    |   |       
+    |   +---profile
+    |   |       page.tsx
+    |   |       
+    |   +---styles
+    |   |       style.ts
+    |   |       
+    |   \---utils
+    |           CoursePlayer.tsx
+    |           CustomModel.tsx
+    |           Heading.tsx
+    |           NavItems.tsx
+    |           Ratings.tsx
+    |           theme-provider.tsx
+    |           ThemeSwitcher.tsx
+    |                       
+    +---pages
+    |   |   _app.tsx
+    |   |   
+    |   \---api
+    |       \---auth
+    |               [...nextauth].ts
+    |               
+    +---public
+    |   |   next.svg
+    |   |   vercel.svg
+    |   |   
+    |   \---assests
+    |           AIBot.jpg
+    |           avatar.png
+    |           banner-img-1.png
+    |           business-img.png
+    |           client-1.jpg
+    |           client-2.jpg
+    |           client-3.jpg
+    |           Notification.mp3
+    |           
+    \---redux
+        |   store.ts
+        |   
+        \---features
+            +---analytics
+            |       analyticsApi.ts
+            |       
+            +---api
+            |       apiSlice.ts
+            |       
+            +---auth
+            |       authApi.ts
+            |       authSlice.ts
+            |       
+            +---courses
+            |       coursesApi.tsx
+            |       
+            +---layout
+            |       layoutApi.ts
+            |       
+            +---notifications
+            |       notificationsApi.ts
+            |       
+            +---orders
+            |       ordersApi.ts
+            |       
+            \---user
+                    userApi.ts
+                    

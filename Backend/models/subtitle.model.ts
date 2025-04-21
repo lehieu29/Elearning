@@ -211,11 +211,3 @@ export const subtitleStylePresets: Record<string, SubtitleStyle> = {
         shadowDepth: 3
     }
 };
-
-export interface SubtitleOptions {
-    contentType?: string;
-    language?: string;
-    style?: string;
-    format?: string;
-    preserveOriginal?: boolean;
-}

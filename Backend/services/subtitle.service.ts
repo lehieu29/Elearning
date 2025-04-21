@@ -7,7 +7,7 @@ import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process'; // Added import for execSync
 
-import { Subtitle, RawSubtitle, SegmentInfo, VideoMetadata, Segment, GeminiApiOptions, BurnOptions, PreprocessOptions, SubtitleStyle, subtitleStylePresets, SubtitleOptions, } from '../models/subtitle.model'; // Adjusted import path
+import { Subtitle, RawSubtitle, SegmentInfo, VideoMetadata, Segment, GeminiApiOptions, BurnOptions, PreprocessOptions, SubtitleStyle, subtitleStylePresets } from '../models/subtitle.model'; // Adjusted import path
 
 // Cấu hình đường dẫn FFmpeg
 ffmpeg.setFfmpegPath(ffmpegPath.path);

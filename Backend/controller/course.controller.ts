@@ -722,3 +722,98 @@ export const getTranscript = CatchAsyncError(
     }
   }
 );
+
+/**
+ * Thêm phụ đề vào video và tải lên Cloudinary
+ * Không kiểm tra isAuthenticated và authorizeRoles
+ */
+export const addSubtitlesToVideo = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return next(new ErrorHandler(`No file uploaded`, 400));
+      }
+
+      // Tạo ID xử lý duy nhất
+      const processId = `subtitle_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      console.log(`[${processId}] Processing file: ${file.originalname}, Size: ${file.size}, Type: ${file.mimetype}`);
+
+      // Kiểm tra file tồn tại trên disk
+      const filePath = file.path;
+      if (!fs.existsSync(filePath)) {
+        return next(new ErrorHandler(`File was not properly saved to disk: ${filePath}`, 500));
+      }
+
+      // Kiểm tra kích thước file thực tế
+      const stats = fs.statSync(filePath);
+      if (stats.size === 0) {
+        return next(new ErrorHandler(`File is empty (0 bytes)`, 400));
+      }
+
+      // Lấy loại nội dung từ request body
+      const contentType = req.body.contentType || 'lecture';
+
+      try {
+        // Tạo thư mục tạm thời cho xử lý video
+        const tempDir = path.join(os.tmpdir(), 'video-processing', processId);
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+        }
+
+        // Xử lý video, tạo phụ đề và gắn phụ đề (đồng bộ)
+        console.log(`[${processId}] Đang xử lý video và tạo phụ đề...`);
+
+        const { outputVideoPath } = await processVideoAndGenerateSubtitlesOptimized(
+          filePath,
+          { contentType },
+          (progress, message) => {
+            console.log(`[${processId}] ${progress}%: ${message}`);
+          }
+        );
+
+        // Tải lên Cloudinary
+        console.log(`[${processId}] Đang tải video lên Cloudinary...`);
+        const result = await cloudinary.v2.uploader.upload(outputVideoPath, {
+          resource_type: "video",
+          folder: "courses/videos",
+          timeout: 600000, // 10 phút timeout
+        });
+
+        console.log(`[${processId}] Cloudinary upload success: ${result.public_id}`);
+
+        // Dọn dẹp files
+        cleanupTempFiles([filePath, tempDir]);
+
+        // Trả về kết quả
+        res.status(200).json({
+          success: true,
+          message: 'Video with subtitles processed and uploaded successfully',
+          data: {
+            url: result.secure_url,
+            publicId: result.public_id,
+            duration: result.duration,
+            format: result.format
+          }
+        });
+      } catch (error: any) {
+        console.error(`[${processId}] Video processing error: ${error.message}`);
+
+        // Cleanup file if exists
+        if (fs.existsSync(filePath)) {
+          try {
+            fs.unlinkSync(filePath);
+            console.log(`Cleaned up temp file: ${filePath}`);
+          } catch (cleanupError: any) {
+            console.error(`Failed to clean up temp file: ${cleanupError.message}`);
+          }
+        }
+
+        return next(new ErrorHandler(error.message, 500));
+      }
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  }
+);

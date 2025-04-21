@@ -6,6 +6,7 @@ import {
   addQuestion,
   addReplyToReview,
   addReview,
+  addSubtitlesToVideo,
   deleteCourse,
   editCourse,
   generateVideoUrl,
@@ -88,10 +89,10 @@ courseRouter.post(
 );
 
 // Allow anonymous users to upload subtitles
-/*courseRouter.post(
-  "/add-subtitles",
+courseRouter.post(
+  "/add-subtitle",
   upload.single("file"),
   addSubtitlesToVideo
-);*/
+);
 
 courseRouter.post("/ai/:id",getTranscript);
