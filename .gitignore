@@ -1,3 +1,5 @@
 action/
 
 *.bat
+
+version.txt

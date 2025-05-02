@@ -23,9 +23,14 @@ const DashboardHeader: FC<Props> = ({ open, setOpen }) => {
   const [updateNotificationStatus, { isSuccess }] =
     useUpdateNotificationStatusMutation();
   const [notifications, setNotifications] = useState<any>([]);
-  const [audio] = useState<any>(
-    new Audio("/assests/Notification.mp3")
-  );
+  const [audio, setAudio] = useState<any>(null);
+
+  useEffect(() => {
+    // Kiểm tra chỉ trên client-side (tránh SSR)
+    if (typeof window !== "undefined") {
+      setAudio(new Audio("/assests/Notification.mp3"));
+    }
+  }, []);
 
   const playNotificationSound = () => {
     audio.play();

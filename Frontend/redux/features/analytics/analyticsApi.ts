@@ -26,4 +26,4 @@ export const analyticsApi = apiSlice.injectEndpoints({
     }),
 });
 
-export const { useGetCoursesAnalyticsQuery,useGetUsersAnalyticsQuery,useGetOrdersAnalyticsQuery } = analyticsApi;
+export const { useGetCoursesAnalyticsQuery, useGetUsersAnalyticsQuery, useGetOrdersAnalyticsQuery } = analyticsApi;

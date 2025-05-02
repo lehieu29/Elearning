@@ -79,7 +79,7 @@ const ChatbotWindow: FC<ChatbotWindowProps> = ({
             />
             <p className="font-medium">Welcome to AI Bot</p>
             <p className="text-sm mt-2">
-              Ask any question about the video "{videoName}"
+              Ask any question about the video &quot;{videoName}&quot;
             </p>
           </div>
         ) : (
