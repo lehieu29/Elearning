@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 import { IoCheckmarkDoneOutline, IoCloseOutline } from "react-icons/io5";
 import { format } from "timeago.js";
 import CourseContentList from "../Course/CourseContentList";
-import { Elements } from "@stripe/react-stripe-js";
+// Removed Stripe Elements import
 import CheckOutForm from "../Payment/CheckOutForm";
 import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
 import Image from "next/image";
@@ -14,16 +14,12 @@ import { VscVerifiedFilled } from "react-icons/vsc";
 
 type Props = {
   data: any;
-  stripePromise: any;
-  clientSecret: string;
   setRoute: any;
   setOpen: any;
 };
 
 const CourseDetails = ({
   data,
-  stripePromise,
-  clientSecret,
   setRoute,
   setOpen: openAuthModal,
 }: Props) => {
@@ -268,25 +264,21 @@ const CourseDetails = ({
       <>
         {open && (
           <div className="w-full h-screen bg-[#00000036] fixed top-0 left-0 z-50 flex items-center justify-center">
-            <div className="w-[500px] bg-white rounded-xl shadow p-3">
+            <div className="w-[500px] max-h-[700px] overflow-y-auto bg-white rounded-xl shadow p-4 bg-white dark:bg-gray-900">
               <div className="w-full flex justify-end">
                 <IoCloseOutline
                   size={40}
-                  className="text-black cursor-pointer"
+                  className="text-black dark:text-white cursor-pointer"
                   onClick={() => setOpen(false)}
                 />
               </div>
               <div className="w-full">
-                {stripePromise && clientSecret && (
-                  <Elements stripe={stripePromise} options={{ clientSecret }}>
-                    <CheckOutForm
-                      setOpen={setOpen}
-                      data={data}
-                      user={user}
-                      refetch={refetch}
-                    />
-                  </Elements>
-                )}
+                <CheckOutForm
+                  setOpen={setOpen}
+                  data={data}
+                  user={user}
+                  refetch={refetch}
+                />
               </div>
             </div>
           </div>
