@@ -6,7 +6,10 @@ import {
   useAddReplyInReviewMutation,
   useAddReviewInCourseMutation,
   useGetCourseDetailsQuery,
+  useGetTranscriptMutation,
 } from "@/redux/features/courses/coursesApi";
+import ChatbotIcon from "@/app/components/AI/ChatbotIcon";
+import ChatbotWindow from "@/app/components/AI/ChatbotWindow";
 import Image from "next/image";
 import { format } from "timeago.js";
 import React, { useEffect, useState } from "react";
@@ -17,7 +20,7 @@ import {
   AiOutlineArrowRight,
   AiOutlineStar,
 } from "react-icons/ai";
-import { BiMessage } from "react-icons/bi";
+import { BiMessage, BiMessageRoundedDots } from "react-icons/bi";
 import { VscVerifiedFilled } from "react-icons/vsc";
 import Ratings from "@/app/utils/Ratings";
 import socketIO from "socket.io-client";
@@ -43,6 +46,8 @@ const CourseContentMedia = ({
   refetch,
 }: Props) => {
   const [activeBar, setactiveBar] = useState(0);
+  const [showChatbot, setShowChatbot] = useState(false);
+  const [getTranscript] = useGetTranscriptMutation();
   const [question, setQuestion] = useState("");
   const [review, setReview] = useState("");
   const [rating, setRating] = useState(1);
@@ -203,7 +208,20 @@ const CourseContentMedia = ({
   };
 
   return (
-    <div className="w-[95%] 800px:w-[86%] py-4 m-auto">
+    <div className="w-[95%] 800px:w-[86%] py-4 m-auto relative">
+      {showChatbot && (
+        <ChatbotWindow
+          videoName={data[activeVideo]?.title}
+          courseId={id}
+          user={user}
+          onClose={() => setShowChatbot(false)}
+          getTranscriptFn={getTranscript}
+        />
+      )}
+      <ChatbotIcon 
+        onClick={() => setShowChatbot(!showChatbot)} 
+        isActive={showChatbot}
+      />
       <CoursePlayer
         title={data[activeVideo]?.title}
         videoUrl={data[activeVideo]?.videoUrl}
@@ -222,12 +240,13 @@ const CourseContentMedia = ({
           <AiOutlineArrowLeft className="mr-2" />
           Prev Lesson
         </div>
-        <Link
-          href={`ai/${id}`}
-          className="p-2 hover:bg-blue-500 border-2 border-blue-500 rounded-xl dark:text-white hover:text-white text-black hover:border-white font-bold"
+        <button
+          onClick={() => setShowChatbot(true)}
+          className="p-2 hover:bg-blue-500 border-2 border-blue-500 rounded-xl dark:text-white hover:text-white text-black hover:border-white font-bold flex items-center space-x-1"
         >
+          <span className="text-xl mr-1" role="img" aria-label="Robot">🤖</span>
           ASK AI
-        </Link>
+        </button>
         <div
           className={`${
             styles.button

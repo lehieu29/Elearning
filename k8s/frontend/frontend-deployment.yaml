@@ -31,8 +31,10 @@ spec:
           value: "https://api.studynow.space/api/v1"
         - name: NEXT_PUBLIC_SOCKET_SERVER_URI
           value: "wss://api.studynow.space"
-        - name: CLOUD_NAME
+        - name: NEXT_PUBLIC_CLOUD_NAME
           value: do7haig17
+        - name: NEXT_PUBLIC_GEMINI_API_KEY
+          value: AIzaSyCRqubDF8Fff5oY-N1oQsIPcFIObUWS9rk
         readinessProbe:
           httpGet:
             path: /
