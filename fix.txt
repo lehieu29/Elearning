@@ -1,0 +1,74 @@
+Cảm ơn bạn đã cung cấp thông tin về lỗi. Tôi thấy vấn đề nghiêm trọng trong cách tôi đã sửa cú pháp filter của ffmpeg. Đúng là việc bọc chỉ đường dẫn trong dấu ngoặc kép đã gây ra lỗi.
+
+## Vấn đề trong lệnh đã sửa
+
+```
+ffmpeg ... -filter:v subtitles="C:/Users/ADMIN/AppData/Local/Temp/video-processing/1745427108134/subtitles.srt":force_style='FontSize=24,BorderStyle=3,Outline=1,Shadow=0,MarginV=25' ...
+```
+
+Như bạn đã chỉ ra:
+1. Khi chỉ bọc đường dẫn trong dấu ngoặc kép, FFmpeg hiểu `subtitles="C:/…/subtitles.srt"` là một filter
+2. Rồi phần `:force_style='…'` nằm ngoài dấu ngoặc kép bị hiểu là một filter riêng biệt
+3. Điều này gây ra lỗi "Invalid argument"
+
+## Giải pháp chính xác
+
+Cần phải sửa lại cách tạo filter để toàn bộ biểu thức filter được xem là một thực thể duy nhất. Có hai cách tiếp cận:
+
+### Cách 1: Nếu đường dẫn KHÔNG có khoảng trắng hoặc ký tự đặc biệt
+
+```javascript
+.videoFilter(`subtitles=${escapedSubtitlePath}:force_style='FontSize=24,BorderStyle=3,Outline=1,Shadow=0,MarginV=25'`)
+```
+
+### Cách 2: Nếu đường dẫn CÓ khoảng trắng hoặc ký tự đặc biệt
+
+```javascript
+.videoFilter(`subtitles='${escapedSubtitlePath}':force_style='FontSize=24,BorderStyle=3,Outline=1,Shadow=0,MarginV=25'`)
+```
+
+### Cách áp dụng thay đổi
+
+Đây là cách tôi sẽ sửa lại hàm `burnSubtitlesToVideo`:
+
+```typescript
+// Xử lý đường dẫn
+let escapedSubtitlePath = subtitlePath;
+if (process.platform === 'win32') {
+    escapedSubtitlePath = subtitlePath.replace(/\\/g, '/');
+}
+
+// Kiểm tra xem đường dẫn có chứa khoảng trắng hoặc ký tự đặc biệt
+const needQuotes = /[\s&()[\]{}^=;!'+,`~]/.test(escapedSubtitlePath);
+
+// Tạo chuỗi filter với hoặc không có dấu ngoặc đơn cho đường dẫn
+const filterString = needQuotes
+    ? `subtitles='${escapedSubtitlePath}':force_style='FontSize=24,BorderStyle=3,Outline=1,Shadow=0,MarginV=25'`
+    : `subtitles=${escapedSubtitlePath}:force_style='FontSize=24,BorderStyle=3,Outline=1,Shadow=0,MarginV=25'`;
+
+// Áp dụng filter
+ffmpeg(videoPath)
+    .inputOptions('-threads 4')
+    .videoFilter(filterString)
+    ...
+```
+
+## Bổ sung -report để debug
+
+Đúng như bạn đề xuất, thêm tham số `-report` là rất hữu ích để phân tích lỗi chi tiết:
+
+```typescript
+ffmpeg(videoPath)
+    .inputOptions('-threads 4')
+    .inputOptions('-report') // Thêm flag để tạo file log chi tiết
+    .videoFilter(filterString)
+    ...
+```
+
+## Kết luận
+
+Cảm ơn bạn rất nhiều vì đã chỉ ra lỗi này. Cú pháp filter của ffmpeg khá phức tạp và cần được xử lý cẩn thận. Vấn đề chính ở đây là việc phân tách filter, không phải là việc chuyển từ `-filter:v` sang `-vf`.
+
+Tôi sẽ cập nhật lại tất cả các hàm `burnSubtitlesToVideo`, `burnSubtitlesToVideoSimplified` và `burnSubtitlesOptimized` với giải pháp đã nêu trên. Việc kiểm tra đường dẫn và quyết định khi nào cần bọc trong dấu ngoặc đơn sẽ giúp đảm bảo lệnh ffmpeg hoạt động chính xác trong mọi trường hợp.
+
+Bạn có muốn tôi tiến hành áp dụng những sửa đổi này vào mã nguồn không?

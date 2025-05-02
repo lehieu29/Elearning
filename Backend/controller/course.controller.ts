@@ -110,7 +110,7 @@ export const uploadVideoHandler = CatchAsyncError(
         });
 
         // Thành công - phát sóng kết quả cuối cùng với thông tin video
-        emitVideoProgress(processId, 100, 'Hoàn thành xử lý và tải lên!', { 
+        emitVideoProgress(processId, 100, 'Processing completed and uploaded!', { 
           fileName,
           publicId: result.public_id,
           url: result.secure_url,

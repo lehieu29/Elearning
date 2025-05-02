@@ -1,337 +1,553 @@
 # Tính Năng AI Trong Dự Án E-Learning
 
-Dự án E-Learning tích hợp Google Generative AI (Gemini) để cung cấp trải nghiệm học tập tương tác và thông minh. Tính năng AI được sử dụng chủ yếu trong việc tạo transcript, trả lời câu hỏi liên quan đến nội dung bài học, và sinh tóm tắt.
+Dự án E-Learning tích hợp các tính năng AI tiên tiến để nâng cao trải nghiệm học tập, tự động hóa quá trình tạo nội dung, và cung cấp hỗ trợ học tập cá nhân hóa cho người dùng. Tài liệu này mô tả chi tiết về các tính năng AI và cách chúng được triển khai trong dự án.
 
-## 1. Tổng Quan Tính Năng AI
+## 1. Tổng Quan Tích Hợp AI
 
-### Các tính năng chính
-- Chat bot trợ giúp trong quá trình học
-- Tự động sinh transcript (phụ đề) cho video bài giảng
-- Tóm tắt nội dung bài học
-- Trả lời câu hỏi dựa trên ngữ cảnh của bài học
-- Giải đáp thắc mắc về lập trình và kỹ thuật
+### 1.1. Công Nghệ AI Sử Dụng
 
-### Công nghệ sử dụng
-- **Google Generative AI (Gemini)**: Model gemini-1.0-pro-001
-- **Socket.IO**: Giao tiếp realtime giữa client và server
-- **FFmpeg**: Xử lý video và audio để tạo transcript
+- **Google Generative AI (Gemini)** - Mô hình đa phương thức chính được sử dụng cho:
+  - Phân tích video và tạo phụ đề
+  - Trả lời câu hỏi từ nội dung khóa học
+  - Sinh tóm tắt tự động
+  - Chatbot trợ giảng thông minh
 
-## 2. Kiến Trúc AI
+### 1.2. Kiến Trúc Tích Hợp AI
 
 ```mermaid
 graph TD
-    A[Client] -->|1. Gửi câu hỏi| B[Frontend: AiChat Component]
-    B -->|2. Gửi prompt| C[Google Generative AI API]
-    C -->|3. Trả về kết quả| B
-    B -->|4. Hiển thị câu trả lời| A
-    
-    E[Video Bài Học] -->|1. Upload| F[Backend: Controller]
-    F -->|2. Tách audio| G[FFmpeg]
-    G -->|3. Audio file| H[AI Transcription Service]
-    H -->|4. Lưu transcript| I[Database]
-    
-    A -->|1. Yêu cầu transcript| J[Backend API]
-    J -->|2. Lấy transcript| I
-    J -->|3. Trả về transcript| A
-    A -->|4. Dùng transcript làm ngữ cảnh| B
+    A[E-Learning Platform] --> B[AI Service Layer]
+    B --> C[Google Generative AI API]
+    B --> D[AI Model Management]
+    B --> E[Content Processing Pipeline]
+    E --> F[Video Processing]
+    E --> G[Text Processing]
+    E --> H[Question Answering]
+    F --> I[Subtitle Generation]
+    F --> J[Video Summarization]
+    G --> K[Content Summarization]
+    G --> L[Keyword Extraction]
+    H --> M[AI Assistant]
 ```
 
-## 3. Cài Đặt Components
+## 2. Tạo Phụ Đề Tự Động Với AI
 
-### 3.1. Frontend AI Chat Component
+### 2.1. Quy Trình Tạo Phụ Đề
+
+```mermaid
+graph TD
+    A[Upload Video] --> B[Tiền Xử Lý Video]
+    B --> C[Phân Đoạn Video]
+    C --> D[Gemini AI Analysis]
+    D --> E[Tạo Phụ Đề JSON]
+    E --> F[Chuyển Đổi Sang SRT]
+    F --> G[Gắn Phụ Đề Vào Video]
+    G --> H[Lưu Trữ Transcript]
+```
+
+### 2.2. Cấu Hình Gemini AI
+
+```typescript
+// Khởi tạo Gemini API
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash', // hoặc 'gemini-2.5-pro' cho chất lượng tốt hơn
+});
+
+// Tạo phụ đề từ video
+export async function callGeminiApi(videoBase64: string, options: GeminiApiOptions = {}): Promise<Subtitle[]> {
+  try {
+    const mimeType = options.mimeType || 'video/mp4';
+    const contentType = options.contentType || 'lecture';
+    const segmentInfo = options.segmentInfo || null;
+
+    // Chuẩn bị prompt
+    const prompt = getEnhancedPrompt(contentType, segmentInfo);
+
+    // Chuẩn bị request parts
+    const requestParts: Part[] = [
+      { text: prompt },
+      {
+        inlineData: {
+          mimeType: mimeType,
+          data: videoBase64
+        }
+      }
+    ];
+
+    // Gọi API
+    const result: GenerateContentResult = await model.generateContent({
+      contents: [{ role: "user", parts: requestParts }],
+      generationConfig: {
+        temperature: 0.2,
+        topK: 32,
+        topP: 0.95,
+        maxOutputTokens: 8192,
+      }
+    });
+
+    // Xử lý response
+    const response = result.response;
+    const responseText = response.text();
+    
+    // Tìm phần JSON trong response
+    // và xử lý thành mảng Subtitle objects
+    // ...
+
+    return subtitles;
+  } catch (error) {
+    // Xử lý lỗi và retry
+    // ...
+  }
+}
+```
+
+### 2.3. Prompt Engineering
+
+Để đạt được kết quả phụ đề chất lượng cao, dự án sử dụng kỹ thuật prompt engineering nâng cao:
+
+```typescript
+function getEnhancedPrompt(contentType = 'lecture', segmentInfo: SegmentInfo | null = null): string {
+  let prompt = `Tạo phụ đề chính xác bằng TIẾNG VIỆT cho video ${contentType} này. RẤT QUAN TRỌNG: Phụ đề PHẢI HOÀN TOÀN bằng TIẾNG VIỆT CÓ DẤU, không chấp nhận bất kỳ phụ đề nào bằng tiếng Anh.`;
+
+  // Thêm chi tiết về định dạng cần thiết
+  prompt += `
+  Trả về phụ đề theo định dạng JSON sau:
+  [
+    {
+      "index": (số thứ tự bắt đầu từ 0),
+      "startTime": (thời gian bắt đầu định dạng mm:ss.sss),
+      "endTime": (thời gian kết thúc định dạng mm:ss.sss),
+      "text": (nội dung phụ đề bằng tiếng Việt)
+    }
+  ]
+  
+  Hướng dẫn QUAN TRỌNG về thời gian phụ đề:
+  1. Bắt đầu từ giây thứ 0 và đảm bảo phụ đề liên tục
+  2. Mỗi phụ đề KHÔNG quá 6 giây và KHÔNG ít hơn 1 giây
+  3. Phụ đề phải ĐỒNG BỘ chính xác với lời nói trong video
+  4. Sử dụng thời gian chính xác trong định dạng mm:ss.sss (phút:giây.mili giây)
+  
+  Hướng dẫn QUAN TRỌNG về nội dung phụ đề:
+  1. Phụ đề PHẢI bằng TIẾNG VIỆT, hãy dịch từ tiếng Anh sang tiếng Việt nếu cần
+  2. Mỗi phụ đề tối đa 2 dòng, mỗi dòng KHÔNG quá 42 ký tự
+  3. KHÔNG viết tắt mà viết đầy đủ các từ và cụm từ
+  4. Giữ nguyên ý nghĩa và sử dụng chính xác thuật ngữ chuyên ngành
+  5. LOẠI BỎ từ lặp lại, từ đệm, và các âm thanh không có nội dung (ừm, ah, etc.)
+  6. ĐẢM BẢO phụ đề tiếng Việt có đầy đủ dấu thanh và dấu câu chính xác
+  `;
+
+  // Thêm hướng dẫn cho từng loại nội dung video
+  if (contentType === 'lecture') {
+    prompt += `
+    Hướng dẫn đặc biệt cho video bài giảng:
+    1. Ưu tiên dịch và giữ lại các thuật ngữ học thuật, công thức chính xác
+    2. Nếu giảng viên viết lên bảng, đảm bảo phụ đề đồng bộ với nội dung được viết
+    3. Phụ đề phải đúng ngữ pháp, dấu câu, viết hoa tên riêng
+    4. Nếu có các câu hỏi từ giảng viên, giữ lại cấu trúc câu hỏi trong phụ đề
+    5. Dịch các thuật ngữ kỹ thuật một cách nhất quán xuyên suốt video
+    `;
+  } else if (contentType === 'tutorial') {
+    // Hướng dẫn cho video tutorial
+    // ...
+  }
+
+  // Thêm thông tin về phân đoạn nếu cần
+  if (segmentInfo) {
+    prompt += `
+    Thông tin về phân đoạn này:
+    - Đây là phân đoạn ${segmentInfo.index + 1} của video
+    - Thời gian bắt đầu: ${segmentInfo.startTime} giây
+    - Thời lượng phân đoạn: ${segmentInfo.duration} giây
+    - Kết thúc phân đoạn tại: ${segmentInfo.startTime + segmentInfo.duration} giây
+    `;
+  }
+
+  return prompt;
+}
+```
+
+### 2.4. Mô Hình AI Subtitle
+
+```typescript
+// Subtitle Model
+export interface Subtitle {
+    index: number;
+    start: number; // Thời gian bắt đầu (giây)
+    end: number; // Thời gian kết thúc (giây)
+    text: string; // Nội dung phụ đề
+}
+
+// RawSubtitle từ AI response
+export interface RawSubtitle {
+    index: number;
+    startTime: string; // Format mm:ss.sss
+    endTime: string; // Format mm:ss.sss
+    text: string;
+}
+
+// Segment Info
+export interface SegmentInfo {
+    index: number;
+    startTime: number;
+    duration: number;
+    totalDuration?: number;
+}
+```
+
+## 3. AI Assistant Cho Nội Dung Khóa Học
+
+### 3.1. Mô Hình Chat AI trong Khóa Học
+
+```mermaid
+graph TD
+    A[Video Player] --> B[Transcript Data]
+    B --> C[AI Context Builder]
+    C --> D[User Question]
+    D --> E[Gemini API Query]
+    E --> F[AI Response Generation]
+    F --> G[Response Display]
+```
+
+### 3.2. Truy Vấn AI Dựa Trên Context
+
+```typescript
+// Backend/services/ai.service.ts
+export async function generateAIResponse(
+  question: string,
+  courseId: string,
+  videoId: string,
+  userId: string
+): Promise<string> {
+  try {
+    // Lấy transcript từ database
+    const transcription = await AIModel.findOne({
+      Course: courseId,
+      title: videoId
+    });
+
+    if (!transcription) {
+      return "Không tìm thấy dữ liệu cho video này để trả lời câu hỏi.";
+    }
+
+    // Tạo context từ transcript
+    const context = transcription.transcription;
+
+    // Chuẩn bị prompt
+    const prompt = `
+    Bạn là trợ lý AI thông minh cho nền tảng học trực tuyến.
+    
+    CONTEXT:
+    ${context}
+    
+    QUESTION:
+    ${question}
+    
+    Dựa trên thông tin trong nội dung video được cung cấp, hãy trả lời câu hỏi trên một cách chi tiết.
+    Trả lời bằng tiếng Việt, có dấu đầy đủ, dễ hiểu.
+    Nếu câu hỏi nằm ngoài nội dung video, hãy trả lời rằng: "Câu hỏi này nằm ngoài phạm vi nội dung của video."
+    `;
+
+    // Gọi API Gemini
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+    
+    const result = await model.generateContent(prompt);
+    const response = result.response.text();
+
+    // Lưu lịch sử trò chuyện
+    await saveUserAIInteraction(userId, courseId, videoId, question, response);
+
+    return response;
+  } catch (error) {
+    console.error("Error generating AI response:", error);
+    return "Đã xảy ra lỗi khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.";
+  }
+}
+```
+
+### 3.3. Component AI Assistant
 
 ```tsx
 // Frontend/app/components/AI/AiChat.tsx
 "use client";
-import React, { FC, useState, useEffect } from "react";
-import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
-import {
-  GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
-} from "@google/generative-ai";
-import { styles } from "@/app/styles/style";
-import { ThemeSwitcher } from "@/app/utils/ThemeSwitcher";
-import Link from "next/link";
-import { useGetTranscriptMutation } from "@/redux/features/courses/coursesApi";
-import { useParams } from "next/navigation";
-import Loader from "../Loader/Loader";
+import React, { useState, useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { useAskAiMutation } from "@/redux/features/api/apiSlice";
+import { FiSend, FiX } from "react-icons/fi";
+import { toast } from "react-hot-toast";
 
-type Props = {
-  videoName: string;
-};
-
-interface Message {
-  text: string;
-  role: "user" | "bot";
-  timestamp: Date;
+interface AiChatProps {
+  courseId: string;
+  videoId: string;
 }
 
-interface ChatSession {
-  sendMessage: (message: string) => Promise<any>;
-}
+const AiChat: React.FC<AiChatProps> = ({ courseId, videoId }) => {
+  const [question, setQuestion] = useState("");
+  const [chatHistory, setChatHistory] = useState<Array<{
+    role: "user" | "ai";
+    content: string;
+    timestamp: Date;
+  }>>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-const AiChat: FC<Props> = ({ videoName }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [userInput, setUserInput] = useState("");
-  const [chat, setChat] = useState<ChatSession | null>(null);
-  const [transcript, setTranscript] = useState<string | undefined>("");
-  const [courseName, setCourseName] = useState<string | undefined>("");
-  const [err, setErr] = useState<string | null>(null);
-  
-  // Cấu hình API key và model
-  const MODEL_NAME = "gemini-1.0-pro-001";
-  const API_KEY = "AIzaSyBTFD1gqjU7NPBnPX88RiFBC3kQSDVqy2c";
-  const genAI = new GoogleGenerativeAI(API_KEY);
-  
-  const courseId = useParams();
-  const [getTranscript, { data, isLoading, error }] =
-    useGetTranscriptMutation();
+  // RTK Query mutation
+  const [askAi, { isLoading }] = useAskAiMutation();
 
-  // Cấu hình generation parameters
-  const generationConfig = {
-    temperature: 0.9,
-    topK: 1,
-    topP: 1,
-    maxOutputTokens: 2048,
-  };
-  
-  // Cấu hình safety settings
-  const safetySettings = [
-    {
-      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-  ];
-
-  // Khởi tạo chat session
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
-    const initChat = async () => {
-      try {
-        const newChat: any = await genAI
-          .getGenerativeModel({ model: MODEL_NAME })
-          .startChat({
-            generationConfig,
-            safetySettings,
-            history: [...messages].map((msg: Message) => ({
-              parts: [{ text: msg.text }],
-              role: msg.role === "bot" ? "model" : msg.role,
-            })),
-          });
-        setChat(newChat);
-      } catch (err: any) {
-        setErr("Something Went Wrong!");
-      }
-    };
-    initChat();
-  }, [transcript, courseName]);
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatHistory]);
 
-  // Xử lý gửi tin nhắn
-  const handleSendMessage = async () => {
+  // Handle sending question
+  const handleSendQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!question.trim()) return;
+    
+    // Add user question to chat
+    setChatHistory((prev) => [
+      ...prev,
+      { role: "user", content: question, timestamp: new Date() }
+    ]);
+    
+    const currentQuestion = question;
+    setQuestion("");
+    
     try {
-      const userMessage: Message = {
-        text: userInput,
-        role: "user",
-        timestamp: new Date(),
-      };
-
-      setMessages((prevMessages) => [...prevMessages, userMessage]);
-      setUserInput("");
+      // Call API
+      const response = await askAi({
+        courseId,
+        videoId,
+        question: currentQuestion
+      }).unwrap();
       
-      if (chat) {
-        let trs: string = transcript
-          ? `Use following Transcript if required NOT Compulsory - "${transcript}" and`
-          : "and";
-          
-        // Tạo prompt với ngữ cảnh
-        const prompt: string = `QUESTION - ${userInput} Answer the following question and provide answer in context to concepts associated with ${videoName} or ${courseName} only, 
-        ${trs} 
-        If question is out of context or not related to programming then just Send Response as "Please ask questions only related to ${videoName}".`;
-        
-        // Gửi prompt đến AI
-        const result = await chat.sendMessage(prompt);
-        
-        // Thêm câu trả lời vào danh sách tin nhắn
-        const botMessage: Message = {
-          text: result.response.text(),
-          role: "bot",
-          timestamp: new Date(),
-        };
-        
-        setMessages((prevMessages) => [...prevMessages, botMessage]);
-      }
-    } catch (err: any) {
-      setErr("Something is wrong");
+      // Add AI response to chat
+      setChatHistory((prev) => [
+        ...prev,
+        { role: "ai", content: response.answer, timestamp: new Date() }
+      ]);
+    } catch (error) {
+      console.error("Error asking AI:", error);
+      toast.error("Không thể nhận câu trả lời từ AI");
+      
+      // Add error message to chat
+      setChatHistory((prev) => [
+        ...prev,
+        { 
+          role: "ai", 
+          content: "Xin lỗi, tôi không thể xử lý câu hỏi của bạn lúc này. Vui lòng thử lại sau.", 
+          timestamp: new Date() 
+        }
+      ]);
     }
   };
 
-  // Xử lý phím Enter
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault(); // prevent adding new Line
-      handleSendMessage();
-    }
-  };
-
-  // Lấy transcript của video
-  const handleGetTranscript = async () => {
-    try {
-      const result = await getTranscript({
-        id: courseId?.id,
-        videoName,
-      });
-      
-      if (result && "data" in result) {
-        let trs: string | undefined = result?.data?.transcript;
-        setTranscript(trs);
-
-        let cname: string | undefined = result?.data?.courseName;
-        setCourseName(cname);
-      }
-      
-      // Tạo câu trả lời tóm tắt ngay khi có transcript
-      if (chat && courseName) {
-        let noTRS: string = `mention "No transcript available for course!, But still here is a short summary on ${videoName}" and provide 3-4 line summary for ${videoName}`;
-        let yesTRS: string = `Summarize the following transcript - ${transcript} in context to ${courseName}`;
-        const prompt: string = transcript ? yesTRS : noTRS;
-        
-        const result = await chat.sendMessage(prompt);
-        
-        const botMessage: Message = {
-          text: result.response.text(),
-          role: "bot",
-          timestamp: new Date(),
-        };
-        
-        setMessages((prevMessages) => [...prevMessages, botMessage]);
-      } else {
-        alert("Try Again");
-      }
-    } catch (err) {
-      console.error("Error fetching transcript:", err);
-    }
+  // Format timestamp
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
-    <>
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <div className="flex flex-col h-screen p-4">
-          <button
-            className="p-2 bg-red-500 self-center rounded-full text-white hover:bg-red-400"
-            onClick={handleGetTranscript}
-          >
-            Summarize
-          </button>
-          <div className="flex justify-between items-center mb-4">
-            <Link href={"/"} className={`${styles.title} !text-2xl`}>
-              ELearning AI BOT 🤖
-            </Link>
-            <div className="flex space-x-2">
-              <ThemeSwitcher />
-            </div>
+    <div className={`fixed bottom-4 right-4 bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden transition-all duration-300 z-40 ${
+      isExpanded ? "w-96 h-[500px]" : "w-12 h-12"
+    }`}>
+      {isExpanded ? (
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="bg-blue-600 text-white p-3 flex justify-between items-center">
+            <h3 className="font-medium">Trợ lý AI</h3>
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="text-white hover:text-gray-200"
+            >
+              <FiX size={18} />
+            </button>
           </div>
-          <div className="flex-1 overflow-y-auto rounded-md p-2">
-            {/* Hiển thị tin nhắn */}
-            {[...messages].map((msg, index) => (
-              <div
-                key={index}
-                className={`mb-4 ${
-                  msg.role === "user" ? "text-right" : "text-left"
-                }`}
-              >
-                <span
-                  className={` ${
-                    msg.role === "user"
-                      ? `${styles.input}`
-                      : " rounded-lg font-Josefin p-2 text-xl text-black dark:text-white bg-blue-200 dark:bg-blue-950 "
+          
+          {/* Chat History */}
+          <div className="flex-1 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-900">
+            {chatHistory.length === 0 ? (
+              <div className="text-center text-gray-500 dark:text-gray-400 my-4">
+                <p>Xin chào! Tôi là trợ lý AI của khóa học này.</p>
+                <p className="mt-2">Hãy đặt câu hỏi về nội dung bạn đang xem.</p>
+              </div>
+            ) : (
+              chatHistory.map((message, index) => (
+                <div
+                  key={index}
+                  className={`mb-3 ${
+                    message.role === "user" ? "text-right" : "text-left"
                   }`}
                 >
-                  {msg.text}
-                </span>
-                <p className={`text-xs ${styles.label} mt-1`}>
-                  {msg.role === "bot" ? "Bot" : "You"} -{" "}
-                  {msg.timestamp.toLocaleTimeString()}
-                </p>
-              </div>
-            ))}
-            {err && <div className="text-red-500 text-sm mb-4">{err}</div>}
-            
-            {/* Input tin nhắn */}
-            <div className="flex items-center mt-4">
+                  <div
+                    className={`inline-block max-w-[80%] rounded-lg p-3 ${
+                      message.role === "user"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white"
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-xs mt-1 opacity-70">
+                      {formatTime(message.timestamp)}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={chatEndRef} />
+          </div>
+          
+          {/* Input Form */}
+          <form
+            onSubmit={handleSendQuestion}
+            className="p-3 border-t dark:border-gray-700"
+          >
+            <div className="flex">
               <input
                 type="text"
-                placeholder="Type your message..."
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                className={`${styles.input} !rounded-l-md !flex-1 !p-2 !border-b !border-t !border-l focus:outline-none focus:border-blue-500 `}
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                disabled={isLoading}
+                placeholder="Nhập câu hỏi của bạn..."
+                className="flex-1 border dark:border-gray-600 rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
               />
               <button
-                onClick={handleSendMessage}
-                className={`p-2 cursor-pointer bg-[#2190ff] text-white rounded-r-md ml-1 mt-1  hover:bg-opacity-80 focus:outline-none`}
+                type="submit"
+                disabled={!question.trim() || isLoading}
+                className={`bg-blue-600 text-white px-3 py-2 rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 ${
+                  !question.trim() || isLoading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
-                Send
+                {isLoading ? (
+                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <FiSend size={20} />
+                )}
               </button>
             </div>
-          </div>
+          </form>
         </div>
+      ) : (
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="w-full h-full bg-blue-600 text-white flex items-center justify-center rounded-full"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </button>
       )}
-    </>
+    </div>
   );
 };
 
 export default AiChat;
 ```
 
-### 3.2. Backend API cho Transcript
+## 4. Tóm Tắt Nội Dung Video Tự Động
+
+### 4.1. Quy Trình Tạo Tóm Tắt
+
+```mermaid
+graph TD
+    A[Yêu Cầu Tóm Tắt] --> B[Lấy Transcript Video]
+    B --> C[Tạo Prompt Tóm Tắt]
+    C --> D[Gọi Gemini API]
+    D --> E[Phân Tích Và Format]
+    E --> F[Lưu Tóm Tắt]
+    F --> G[Hiển Thị UI]
+```
+
+### 4.2. API Endpoint Tóm Tắt
 
 ```typescript
-// Backend/controller/course.controller.ts
-export const getTranscript = catchAsyncErrors(
+// Backend/controllers/ai.controller.ts
+export const generateVideoSummary = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id, videoName } = req.body;
-
-      // Tìm khóa học
-      const course = await CourseModel.findById(id);
-      if (!course) {
-        return next(new ErrorHandler("Course not found", 404));
+      const { courseId, videoId } = req.body;
+      
+      // Kiểm tra quyền truy cập
+      // Đảm bảo người dùng đã mua khóa học này
+      const user = await UserModel.findById(req.user?._id);
+      const courseExists = user?.courses.some(
+        (course) => course.courseId.toString() === courseId
+      );
+      
+      if (!courseExists) {
+        return next(new ErrorHandler("Bạn không có quyền truy cập vào nội dung này", 403));
       }
-
-      // Tìm subtitle trong database
-      const subtitle = await SubtitleModel.findOne({
-        courseId: id,
-        fileName: videoName,
+      
+      // Lấy transcript
+      const aiData = await AIModel.findOne({
+        Course: courseId,
+        title: videoId
       });
-
-      // Nếu có subtitle, trả về
-      if (subtitle) {
-        return res.status(200).json({
-          success: true,
-          transcript: subtitle.transcript,
-          courseName: course.name,
-        });
+      
+      if (!aiData) {
+        return next(new ErrorHandler("Không tìm thấy dữ liệu transcript cho video này", 404));
       }
-
-      // Nếu không có, trả về rỗng
-      return res.status(200).json({
+      
+      // Tạo prompt
+      const prompt = `
+      Dưới đây là nội dung của một video giáo dục:
+      
+      ${aiData.transcription}
+      
+      Hãy tạo một bản tóm tắt chi tiết của video này bằng tiếng Việt. Bản tóm tắt cần:
+      
+      1. Có độ dài khoảng 300-500 từ
+      2. Bao gồm các ý chính và điểm quan trọng
+      3. Có cấu trúc rõ ràng với các đề mục chính
+      4. Có phần kết luận ngắn gọn
+      
+      Format tóm tắt theo cấu trúc Markdown, với các mục được đánh dấu rõ ràng.
+      `;
+      
+      // Gọi API Gemini
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+      
+      const result = await model.generateContent(prompt);
+      const summary = result.response.text();
+      
+      // Lưu summary vào database nếu chưa có
+      let summaryDoc = await SummaryModel.findOne({
+        courseId,
+        videoId
+      });
+      
+      if (!summaryDoc) {
+        summaryDoc = await SummaryModel.create({
+          courseId,
+          videoId,
+          content: summary,
+          createdBy: req.user?._id
+        });
+      } else {
+        // Cập nhật nếu đã tồn tại
+        summaryDoc.content = summary;
+        summaryDoc.updatedAt = new Date();
+        await summaryDoc.save();
+      }
+      
+      res.status(200).json({
         success: true,
-        transcript: "",
-        courseName: course.name,
+        summary
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 500));
@@ -340,416 +556,304 @@ export const getTranscript = catchAsyncErrors(
 );
 ```
 
-### 3.3. Backend Service cho Transcript Generation
+## 5. Phân Tích Dữ Liệu Học Tập Với AI
+
+### 5.1. Phân Tích Tiến Độ Học Tập
+
+Hệ thống sử dụng AI để phân tích hành vi và tiến độ học tập của học viên.
 
 ```typescript
-// Backend/services/ai.service.ts
-import ffmpeg from 'fluent-ffmpeg';
-import fs from 'fs-extra';
-import path from 'path';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-// Khởi tạo Google Generative AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
-
-export const generateTranscript = async (videoPath: string, fileName: string, courseId: string): Promise<string> => {
+// Phân tích hành vi xem video
+export const analyzeViewingPatterns = async (userId: string, courseId: string) => {
   try {
-    // Thư mục lưu file tạm
-    const tempDir = path.join(__dirname, '../temp');
-    await fs.ensureDir(tempDir);
-
-    // Đường dẫn cho file audio
-    const audioPath = path.join(tempDir, `${path.basename(videoPath, path.extname(videoPath))}.mp3`);
-
-    // Trích xuất audio từ video
-    await new Promise<void>((resolve, reject) => {
-      ffmpeg(videoPath)
-        .output(audioPath)
-        .audioCodec('libmp3lame')
-        .on('end', () => resolve())
-        .on('error', (err) => reject(err))
-        .run();
-    });
-
-    // Đọc file audio dưới dạng base64
-    const audioData = await fs.readFile(audioPath, { encoding: 'base64' });
-
-    // Gửi yêu cầu đến AI để tạo transcript
+    // Lấy dữ liệu xem video của user
+    const viewingData = await ViewingModel.find({
+      userId,
+      courseId
+    }).sort({ createdAt: 1 });
+    
+    if (!viewingData.length) {
+      return {
+        insights: "Chưa có đủ dữ liệu để phân tích."
+      };
+    }
+    
+    // Chuẩn bị dữ liệu cho phân tích
+    const formattedData = viewingData.map(item => ({
+      videoId: item.videoId,
+      watchTime: item.watchTime,
+      completionRate: item.completionRate,
+      pauseCount: item.pauseCount,
+      rewindCount: item.rewindCount,
+      date: item.createdAt
+    }));
+    
+    // Tạo prompt phân tích với Gemini
     const prompt = `
-      You are a professional transcription service. 
-      Transcribe the following audio to text.
-      Return only the transcript, without any additional explanation or notes.
-      Please maintain any technical terms and code snippets if they appear in the audio.
+    Dưới đây là dữ liệu xem video của một học viên:
+    
+    ${JSON.stringify(formattedData, null, 2)}
+    
+    Hãy phân tích dữ liệu và cung cấp:
+    1. Thói quen học tập (thời gian, mức độ tập trung)
+    2. Các video có vấn đề (pause/rewind nhiều)
+    3. Tiến độ hoàn thành khóa học
+    4. Đề xuất cải thiện
+    
+    Trả về kết quả bằng tiếng Việt, định dạng JSON với các trường:
+    - learningHabits: phân tích thói quen học tập
+    - problemVideos: danh sách video có vấn đề
+    - progress: phần trăm hoàn thành ước tính
+    - recommendations: mảng các đề xuất cải thiện
     `;
-
-    const result = await model.generateContent([
-      prompt,
-      { audio: audioData }
-    ]);
-
-    const transcript = result.response.text();
-
-    // Xóa file tạm
-    await fs.remove(audioPath);
-
-    // Lưu transcript vào database
-    const subtitle = new SubtitleModel({
-      courseId,
-      fileName,
-      transcript,
-    });
-
-    await subtitle.save();
-
-    return transcript;
+    
+    // Gọi Gemini API và trả về kết quả
+    // ...
+    
+    return analysisResult;
   } catch (error) {
-    console.error('Error generating transcript:', error);
+    console.error("Error analyzing viewing patterns:", error);
     throw error;
   }
 };
 ```
 
-### 3.4. Backend Model cho Subtitle
+### 5.2. Gợi Ý Cá Nhân Hóa
 
 ```typescript
-// Backend/models/subtitle.model.ts
-import mongoose, { Document, Model, Schema } from "mongoose";
-
-export interface ISubtitle extends Document {
-  courseId: string;
-  fileName: string;
-  transcript: string;
-}
-
-const subtitleSchema = new Schema<ISubtitle>({
-  courseId: {
-    type: String,
-    required: true,
-  },
-  fileName: {
-    type: String,
-    required: true,
-  },
-  transcript: {
-    type: String,
-    required: true,
-  },
-}, {
-  timestamps: true,
-});
-
-// Tạo index để tăng tốc độ truy vấn
-subtitleSchema.index({ courseId: 1, fileName: 1 }, { unique: true });
-
-const SubtitleModel: Model<ISubtitle> = mongoose.model("Subtitle", subtitleSchema);
-
-export default SubtitleModel;
-```
-
-## 4. Luồng Xử Lý Chính
-
-### 4.1. Tạo Transcript Cho Video
-
-```mermaid
-sequenceDiagram
-    participant Admin
-    participant Backend
-    participant FFmpeg
-    participant GoogleAI
-    participant Database
+// Tạo gợi ý khóa học dựa trên hành vi học tập
+export const generatePersonalizedRecommendations = async (userId: string) => {
+  try {
+    // Lấy lịch sử học tập và sở thích
+    const user = await UserModel.findById(userId);
+    const completedCourses = await OrderModel.find({ userId })
+      .populate('courseId');
+    const viewingHistory = await ViewingModel.find({ userId });
     
-    Admin->>Backend: Upload video bài học
-    Backend->>Backend: Lưu video trên Cloudinary
-    Backend->>FFmpeg: Trích xuất audio từ video
-    FFmpeg->>Backend: Trả về file audio
-    Backend->>GoogleAI: Gửi file audio + prompt
-    GoogleAI->>Backend: Trả về transcript
-    Backend->>Database: Lưu transcript
-```
-
-1. **Upload Video**:
-   - Admin upload video khóa học lên hệ thống
-   - Backend lưu video trên Cloudinary
-
-2. **Tạo Transcript**:
-   - Backend sử dụng FFmpeg để trích xuất audio từ video
-   - Audio được gửi đến Google Generative AI với prompt yêu cầu tạo transcript
-   - AI trả về transcript dạng text
-
-3. **Lưu Trữ**:
-   - Transcript được lưu vào MongoDB với courseId và fileName
-   - Sẵn sàng được sử dụng cho tính năng AI Chat
-
-### 4.2. AI Chat Trong Khóa Học
-
-```mermaid
-sequenceDiagram
-    participant Student
-    participant Frontend
-    participant Backend
-    participant MongoDB
-    participant GoogleAI
+    // Chuẩn bị dữ liệu cho AI
+    const userProfile = {
+      completedCourses: completedCourses.map(order => ({
+        id: order.courseId._id,
+        name: order.courseId.name,
+        categories: order.courseId.categories,
+        tags: order.courseId.tags,
+        level: order.courseId.level,
+        completionRate: calculateCompletionRate(viewingHistory, order.courseId._id)
+      })),
+      interests: user.interests || [],
+      skills: user.skills || []
+    };
     
-    Student->>Frontend: Mở AI Chat trong bài học
-    Frontend->>Backend: Yêu cầu transcript (videoName, courseId)
-    Backend->>MongoDB: Tìm transcript
-    MongoDB->>Backend: Trả về transcript
-    Backend->>Frontend: Gửi transcript
-    Frontend->>GoogleAI: Khởi tạo chat session với context
-    GoogleAI->>Frontend: Tạo tóm tắt nội dung
-    Frontend->>Student: Hiển thị tóm tắt
+    // Get available courses
+    const allCourses = await CourseModel.find();
     
-    Student->>Frontend: Đặt câu hỏi
-    Frontend->>GoogleAI: Gửi prompt với context từ transcript
-    GoogleAI->>Frontend: Trả về câu trả lời
-    Frontend->>Student: Hiển thị câu trả lời
-```
-
-1. **Khởi Tạo Chat**:
-   - Học viên mở AI Chat khi xem video bài học
-   - Frontend gọi API để lấy transcript của video
-   - Frontend khởi tạo chat session với Google Generative AI
-
-2. **Tóm Tắt Nội Dung**:
-   - Khi nhấn nút "Summarize", AI sẽ tự động tạo tóm tắt nội dung dựa trên transcript
-   - Tóm tắt được hiển thị như tin nhắn đầu tiên trong chat
-
-3. **Trò Chuyện AI**:
-   - Học viên đặt câu hỏi liên quan đến nội dung bài học
-   - Frontend gửi prompt đến AI với context từ transcript
-   - AI trả về câu trả lời dựa trên nội dung bài học
-
-## 5. Các Prompt Templates
-
-### 5.1. Prompt cho Tóm Tắt Nội Dung
-
-```typescript
-// Khi có transcript
-const summaryPromptWithTranscript = `
-Summarize the following transcript - ${transcript} in context to ${courseName}
-Provide a concise summary that highlights the main points, key concepts, and important examples from the lecture.
-The summary should be structured with bullet points for key concepts.
-Keep the tone educational and informative.
-`;
-
-// Khi không có transcript
-const summaryPromptWithoutTranscript = `
-mention "No transcript available for course!, But still here is a short summary on ${videoName}" and provide 3-4 line summary for ${videoName}
-Based on the title, predict what the content might cover and provide a general overview of that topic.
-Focus on standard concepts associated with this topic in programming education.
-`;
-```
-
-### 5.2. Prompt cho Câu Hỏi
-
-```typescript
-const questionPrompt = `
-QUESTION - ${userQuestion} 
-Answer the following question and provide answer in context to concepts associated with ${videoName} or ${courseName} only,
-${transcript ? `Use following Transcript if required NOT Compulsory - "${transcript}" and` : "and"}
-If question is out of context or not related to programming then just Send Response as "Please ask questions only related to ${videoName}".
-
-Keep the answer concise but thorough, focusing on educational value.
-Include code examples if appropriate for programming questions.
-If a concept mentioned in the question appears in the transcript, reference and explain it.
-If the question asks for clarification on something in the transcript, provide that clarification.
-`;
-```
-
-## 6. Cài Đặt API và Redux
-
-### 6.1. Redux API Slice cho Transcript
-
-```typescript
-// Frontend/redux/features/courses/coursesApi.ts
-export const coursesApi = apiSlice.injectEndpoints({
-  endpoints: (builder) => ({
-    // Các endpoints khác...
+    // Tạo prompt cho AI
+    const prompt = `
+    Dưới đây là thông tin học tập của người dùng:
     
-    getTranscript: builder.mutation({
-      query: ({ id, videoName }) => ({
-        url: "get-transcript",
-        method: "POST",
-        body: { id, videoName },
-        credentials: "include" as const,
-      }),
-    }),
-  }),
-});
-
-export const {
-  // Các hooks khác...
-  useGetTranscriptMutation,
-} = coursesApi;
-```
-
-### 6.2. Backend Route
-
-```typescript
-// Backend/routes/course.route.ts
-import express from "express";
-import { authorizeRoles, isAuthenticated } from "../middleware/auth";
-import { 
-  // Các controllers khác...
-  getTranscript, 
-  generateVideoSubtitle 
-} from "../controller/course.controller";
-
-const courseRouter = express.Router();
-
-// Các routes khác...
-
-// Get transcript
-courseRouter.post("/get-transcript", isAuthenticated, getTranscript);
-
-// Generate subtitle (admin only)
-courseRouter.post(
-  "/generate-video-subtitle",
-  isAuthenticated,
-  authorizeRoles("admin"),
-  generateVideoSubtitle
-);
-
-export default courseRouter;
-```
-
-## 7. Phân Tích Hiệu Năng và Tối Ưu
-
-### 7.1. Vấn Đề Hiệu Năng
-
-1. **Độ Trễ API**: 
-   - Google Generative AI có thể có độ trễ cao khi xử lý prompt dài
-   - Việc tạo transcript cho video dài cũng tiêu tốn thời gian và tài nguyên
-
-2. **Kích Thước Transcript**:
-   - Transcript của video dài có thể rất lớn, vượt quá giới hạn của prompt
-
-3. **Sử Dụng Token**:
-   - Google Generative AI có giới hạn token, cần tối ưu việc sử dụng
-
-### 7.2. Giải Pháp Tối Ưu
-
-1. **Caching**:
-   - Cache transcript trong database để tránh tạo lại mỗi lần
-   - Cache các câu trả lời thường gặp
-
-2. **Chunk Transcript**:
-   - Chia transcript thành các đoạn nhỏ hơn
-   - Chỉ gửi các đoạn liên quan đến câu hỏi
-
-3. **Batch Processing**:
-   - Tạo transcript trong background job
-   - Sử dụng queue để xử lý nhiều yêu cầu tạo transcript
-
-4. **Tối Ưu Prompt**:
-   - Sử dụng prompt ngắn gọn và hiệu quả
-   - Chỉ gửi context cần thiết
-
-```typescript
-// Ví dụ: Chunk transcript
-const chunkTranscript = (transcript: string, maxChunkSize: number = 2000): string[] => {
-  const words = transcript.split(' ');
-  const chunks: string[] = [];
-  let currentChunk = '';
-
-  for (const word of words) {
-    if ((currentChunk + ' ' + word).length <= maxChunkSize) {
-      currentChunk += (currentChunk ? ' ' : '') + word;
-    } else {
-      chunks.push(currentChunk);
-      currentChunk = word;
+    ${JSON.stringify(userProfile, null, 2)}
+    
+    Và đây là danh sách tất cả các khóa học có sẵn:
+    
+    ${JSON.stringify(allCourses.map(course => ({
+      id: course._id,
+      name: course.name,
+      description: course.description,
+      categories: course.categories,
+      tags: course.tags,
+      level: course.level
+    })), null, 2)}
+    
+    Hãy gợi ý 5 khóa học phù hợp nhất cho người dùng này dựa trên:
+    1. Mối liên hệ với các khóa học đã hoàn thành
+    2. Cùng chủ đề hoặc nâng cao từ các khóa học đã học
+    3. Phù hợp với sở thích và kỹ năng
+    4. Tiến trình học tập (level phù hợp)
+    
+    Đồng thời, giải thích lý do đề xuất mỗi khóa học. Trả về kết quả dưới dạng JSON với cấu trúc:
+    {
+      "recommendations": [
+        {
+          "courseId": "ID khóa học",
+          "reason": "Lý do đề xuất"
+        }
+      ]
     }
+    `;
+    
+    // Gọi Gemini API và xử lý kết quả
+    // ...
+    
+    return recommendations;
+  } catch (error) {
+    console.error("Error generating recommendations:", error);
+    throw error;
   }
-
-  if (currentChunk) {
-    chunks.push(currentChunk);
-  }
-
-  return chunks;
-};
-
-// Sử dụng chunks khi gửi prompt
-const findRelevantChunk = (chunks: string[], question: string): string => {
-  // Tìm chunk liên quan nhất đến câu hỏi
-  // (Có thể sử dụng embedding hoặc keyword matching)
-  // ...
-  return mostRelevantChunk;
 };
 ```
 
-## 8. Hướng Phát Triển Trong Tương Lai
+## 6. Đánh Giá Kỹ Thuật Và Hiệu Suất AI
 
-### 8.1. Các Tính Năng Mới
+### 6.1. Độ Chính Xác Phụ Đề
 
-1. **AI Tutor Cá Nhân Hóa**:
-   - Tạo lộ trình học tập cá nhân hóa dựa trên tiến độ và sở thích của học viên
-   - Đề xuất khóa học và bài học phù hợp
+Để đảm bảo chất lượng phụ đề, hệ thống sử dụng các kỹ thuật sau:
 
-2. **Sinh Nội Dung Tự Động**:
-   - Tự động tạo quiz và bài tập từ nội dung bài học
-   - Tạo flashcards và tài liệu ôn tập
+1. **Retry & Fallback**: Thử lại với các mô hình khác nhau nếu gặp lỗi
+2. **Post-processing**: Điều chỉnh thời gian và nội dung phụ đề sau khi tạo
+3. **Quality Checking**: Kiểm tra chất lượng phụ đề tự động
 
-3. **Phân Tích Dữ Liệu Học Tập**:
-   - Phân tích hành vi học tập của học viên
-   - Đưa ra gợi ý cải thiện hiệu quả học tập
+```typescript
+// Hậu xử lý phụ đề
+function enhancedPostProcessSubtitles(subtitles: Subtitle[]): Subtitle[] {
+  if (!subtitles || subtitles.length === 0) {
+    return [];
+  }
 
-4. **Đa Ngôn Ngữ**:
-   - Dịch nội dung khóa học sang nhiều ngôn ngữ
-   - Hỗ trợ trò chuyện AI bằng nhiều ngôn ngữ
+  // Sắp xếp theo thời gian bắt đầu
+  subtitles.sort((a, b) => a.start - b.start);
 
-### 8.2. Cải Tiến AI
+  // Bước 1: Loại bỏ phụ đề trùng lặp
+  const deduplicatedSubtitles: Subtitle[] = [];
+  // ... implementation
+  
+  // Bước 2: Điều chỉnh thời gian hiển thị
+  const adjustedSubtitles = deduplicatedSubtitles.map(sub => {
+    // ... implement timing adjustments
+  });
+  
+  // Bước 3: Đảm bảo không có chồng chéo
+  const finalSubtitles: Subtitle[] = [];
+  // ... implementation
+  
+  return finalSubtitles;
+}
+```
 
-1. **Fine-tuning Model**:
-   - Fine-tune model Gemini với dữ liệu từ lĩnh vực cụ thể
-   - Tạo model chuyên biệt cho từng chủ đề (lập trình, thiết kế, v.v.)
+### 6.2. Mức Sử Dụng Token
 
-2. **Embedding Vector Database**:
-   - Sử dụng embedding để lưu trữ và tìm kiếm nội dung
-   - Tìm kiếm semantic thay vì keyword
+Hệ thống theo dõi và tối ưu hóa việc sử dụng token AI:
 
-3. **Multi-modal AI**:
-   - Phân tích hình ảnh và video để hiểu nội dung
-   - Tạo giải thích cho các đoạn code và diagram
+```typescript
+// Monitoring token usage
+const monitorTokenUsage = async (
+  prompt: string,
+  response: string,
+  model: string,
+  feature: string
+) => {
+  // Estimate token count using tokenizer
+  const promptTokens = countTokens(prompt);
+  const responseTokens = countTokens(response);
+  
+  // Log to database
+  await TokenUsageModel.create({
+    promptTokens,
+    responseTokens,
+    totalTokens: promptTokens + responseTokens,
+    model,
+    feature,
+    timestamp: new Date()
+  });
+  
+  // Check if approaching limits
+  const usageToday = await TokenUsageModel.aggregate([
+    {
+      $match: {
+        timestamp: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalTokens: { $sum: "$totalTokens" }
+      }
+    }
+  ]);
+  
+  const totalUsageToday = usageToday[0]?.totalTokens || 0;
+  const limit = parseInt(process.env.DAILY_TOKEN_LIMIT || "1000000");
+  
+  if (totalUsageToday > limit * 0.8) {
+    // Alert admins about high usage
+    console.warn(`AI token usage at ${Math.round(totalUsageToday/limit*100)}% of daily limit`);
+  }
+};
+```
 
-4. **Realtime AI Feedback**:
-   - Cung cấp phản hồi realtime khi học viên làm bài tập
-   - Phát hiện và sửa lỗi trong code
+## 7. Bảo Mật Và Quyền Riêng Tư
 
-## 9. Các Thách Thức và Giải Pháp
+### 7.1. Xử Lý Dữ Liệu AI
 
-### 9.1. Thách Thức
+```typescript
+// Cấu hình bảo mật cho AI
+const aiSecurityConfig = {
+  // Không lưu dữ liệu người dùng trên Gemini
+  apiConfig: {
+    safetySettings: [
+      {
+        category: "HARM_CATEGORY_HARASSMENT",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+      },
+      {
+        category: "HARM_CATEGORY_HATE_SPEECH",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+      },
+      {
+        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+      },
+      {
+        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+      }
+    ],
+    privacy: {
+      storeUsageData: false,
+      storeFeedbackData: false
+    }
+  },
+  
+  // Xử lý dữ liệu nhạy cảm
+  processSensitiveData: (content: string): string => {
+    // Phát hiện và che thông tin cá nhân
+    return content
+      .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[EMAIL]")
+      .replace(/\b(?:\d[ -]*?){13,16}\b/g, "[CREDIT_CARD]")
+      .replace(/\b(?:\d{3}[ -]*?){3}\d{4}\b/g, "[PHONE]");
+  }
+};
 
-1. **Độ Chính Xác của Transcript**:
-   - Transcript có thể không chính xác đối với các thuật ngữ kỹ thuật
-   - Sai sót trong phát âm và ngôn ngữ chuyên ngành
+// Sử dụng trong các API call
+const callAIWithPrivacy = async (prompt: string, options = {}) => {
+  // Xử lý dữ liệu nhạy cảm trước khi gửi đến AI
+  const processedPrompt = aiSecurityConfig.processSensitiveData(prompt);
+  
+  // Gọi API với cấu hình bảo mật
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-pro',
+    safetySettings: aiSecurityConfig.apiConfig.safetySettings
+  });
+  
+  const result = await model.generateContent(processedPrompt);
+  return result.response.text();
+};
+```
 
-2. **Hallucination của AI**:
-   - AI có thể tạo ra thông tin không có trong nội dung khóa học
-   - Thiếu chính xác trong các câu trả lời kỹ thuật
+## 8. Kế Hoạch Phát Triển AI
 
-3. **Chi Phí API**:
-   - Chi phí API của Google Generative AI tăng theo số lượng người dùng
-   - Tạo transcript cho video dài rất tốn kém
+### 8.1. Roadmap Tính Năng AI
+- **Q2 2025**: Cải thiện độ chính xác phụ đề, hỗ trợ thêm ngôn ngữ
+- **Q3 2025**: Thêm tính năng tạo quiz tự động từ nội dung video
+- **Q4 2025**: Phân tích cảm xúc (sentiment) từ feedback người dùng
+- **Q1 2026**: Phân tích nội dung video để tạo mục lục tự động
 
-4. **Ngôn Ngữ Đa Dạng**:
-   - Học viên có thể đặt câu hỏi bằng nhiều ngôn ngữ khác nhau
-   - Nội dung khóa học có thể bằng nhiều ngôn ngữ
+### 8.2. Mô Hình AI Mới
 
-### 9.2. Giải Pháp
-
-1. **Kiểm Tra và Chỉnh Sửa Transcript**:
-   - Cho phép giảng viên chỉnh sửa transcript
-   - Sử dụng dictionary của thuật ngữ kỹ thuật để cải thiện độ chính xác
-
-2. **Prompt Engineering Nâng Cao**:
-   - Thiết kế prompt giảm thiểu hallucination
-   - Thêm hướng dẫn cụ thể cho AI để tránh tạo thông tin sai
-
-3. **Quản Lý Chi Phí API**:
-   - Sử dụng caching để giảm số lượng gọi API
-   - Thiết lập giới hạn sử dụng theo gói dịch vụ
-
-4. **Hỗ Trợ Đa Ngôn Ngữ**:
-   - Tự động phát hiện ngôn ngữ của câu hỏi
-   - Sử dụng prompt đa ngôn ngữ
+```mermaid
+graph TD
+    A[Gemini 2.5 Pro] --> B[Gemini 3.0]
+    B --> C[Embeddings cho Vector Search]
+    C --> D[Tìm Kiếm Nâng Cao]
+    D --> E[Gợi Ý Kết Hợp]
+```

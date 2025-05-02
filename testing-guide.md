@@ -33,7 +33,7 @@ SOCKET_ENABLE=true
 # Các biến môi trường hiện tại
 
 # Cập nhật URL Socket server
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_SOCKET_SERVER_URI=http://localhost:8000
 ```
 
 ## 1. Kiểm thử Socket.IO

@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: elearning-tls
+spec:
+  secretName: elearning-tls          # Secret sẽ được cert-manager tạo/ghi đè
+  dnsNames:
+    - studynow.space
+    - www.studynow.space
+    - api.studynow.space
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io

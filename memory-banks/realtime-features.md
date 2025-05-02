@@ -29,6 +29,10 @@ Dự án E-Learning tích hợp tính năng realtime thông qua Socket.IO để 
    - Hiển thị số lượng người đang xem khóa học
    - Cập nhật điểm đánh giá và bình luận mới
 
+5. **Hàng Đợi Xử Lý Video (Video Queue)**:
+   - Hiển thị tiến trình xử lý video theo thời gian thực
+   - Cập nhật trạng thái upload, xử lý, tạo phụ đề, và hoàn thành
+
 ## 2. Kiến Trúc Socket.IO
 
 ### 2.1. Cấu Hình Socket Server
@@ -99,40 +103,15 @@ export const initSocketServer = (server: http.Server) => {
       }
     });
 
-    // Xử lý chat
-    socket.on("message", (data) => {
-      saveMessageToDB(data);
-      
-      // Gửi tin nhắn đến người nhận
-      if (data.recipientId) {
-        io.to(`user:${data.recipientId}`).emit("newMessage", data);
+    // Xử lý tiến trình xử lý video
+    socket.on("videoProgress", (data) => {
+      if (data.userId) {
+        // Gửi cập nhật tiến trình video đến người dùng cụ thể
+        io.to(`user:${data.userId}`).emit("videoProgress", data);
       }
     });
 
-    // Xử lý trạng thái online
-    socket.on("userStatus", (status) => {
-      // Cập nhật trạng thái người dùng
-      if (socket.data.user?.id) {
-        io.emit("userStatusUpdate", {
-          userId: socket.data.user.id,
-          status,
-        });
-      }
-    });
-
-    // Xử lý xem video
-    socket.on("watchingVideo", (data) => {
-      // Tham gia room của video đang xem
-      socket.join(`video:${data.videoId}`);
-      
-      // Đếm số người đang xem
-      const clientsCount = io.sockets.adapter.rooms.get(`video:${data.videoId}`)?.size || 0;
-      
-      // Thông báo cho tất cả người dùng đang xem cùng video
-      io.to(`video:${data.videoId}`).emit("viewerCount", { count: clientsCount });
-    });
-
-    // Xử lý khi ngắt kết nối
+    // Xử lý ngắt kết nối
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.id}`);
       
@@ -141,1461 +120,817 @@ export const initSocketServer = (server: http.Server) => {
     });
   });
 
-  // Tạo room cho admin
-  const adminNamespace = io.of("/admin");
-  adminNamespace.use((socket, next) => {
-    // Kiểm tra quyền admin
-    const token = socket.handshake.auth.token;
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN as string);
-        if (decoded.role === "admin") {
-          socket.data.admin = decoded;
-          return next();
-        }
-      } catch (error) {
-        // Xử lý lỗi
-      }
-    }
-    next(new Error("Admin authentication failed"));
-  });
-
-  // Xử lý kết nối từ admin
-  adminNamespace.on("connection", (socket) => {
-    console.log(`Admin connected: ${socket.id}`);
-    socket.join("admin");
-    
-    // Xử lý các sự kiện dành riêng cho admin
-    // ...
-  });
-
   return io;
 };
-
-// Hàm lưu thông báo vào database
-const saveNotificationToDB = async (data: any) => {
-  try {
-    await NotificationModel.create({
-      title: data.title,
-      message: data.message,
-      status: "unread",
-      userId: data.userId,
-    });
-  } catch (error) {
-    console.error("Error saving notification:", error);
-  }
-};
-
-// Hàm lưu tin nhắn chat vào database
-const saveMessageToDB = async (data: any) => {
-  try {
-    await MessageModel.create({
-      sender: data.senderId,
-      recipient: data.recipientId,
-      content: data.content,
-      status: "sent",
-    });
-  } catch (error) {
-    console.error("Error saving message:", error);
-  }
-};
 ```
 
-### 2.2. Kết Nối Socket.IO với Server Express
+## 3. Hệ Thống Hàng Đợi Video (Video Queue)
 
-```typescript
-// Backend/server.ts
-import http from "http";
-import app from "./app";
-import { initSocketServer } from "./socketServer";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
+### 3.1. VideoQueueContext (Frontend)
 
-dotenv.config();
-
-// Database connection
-mongoose.connect(process.env.DB_URL || "", {
-  // options
-})
-.then(() => console.log("MongoDB connected"))
-.catch((err) => console.log(err));
-
-// Create HTTP server
-const server = http.createServer(app);
-
-// Initialize Socket.IO
-const io = initSocketServer(server);
-
-// Handle errors
-server.on("error", (error) => {
-  console.error("Server error:", error);
-});
-
-// Start server
-const PORT = process.env.PORT || 8000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-```
-
-## 3. Tích Hợp Realtime Trên Frontend
-
-### 3.1. Context Provider cho Socket.IO
+Quản lý trạng thái và hiển thị tiến trình xử lý video trên giao diện người dùng.
 
 ```tsx
-// Frontend/app/utils/SocketContext.tsx
+// Frontend/app/contexts/VideoQueueContext.tsx
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
-import { useSelector } from "react-redux";
+import { toast } from "react-hot-toast";
+import io, { Socket } from "socket.io-client";
 
-interface SocketContextProps {
-  socket: Socket | null;
-  isConnected: boolean;
-  connect: () => void;
-  disconnect: () => void;
+// Khai báo kiểu dữ liệu cho video trong queue
+export interface VideoQueueItem {
+  processId: string;
+  fileName: string;
+  progress: number;
+  message: string;
+  status: "pending" | "processing" | "success" | "error";
+  result?: {
+    publicId?: string;
+    url?: string;
+    duration?: number;
+    format?: string;
+    error?: string;
+    warning?: string;
+  };
+  uploadType: "demo" | "content";
+  contentIndex?: number; // Chỉ dùng cho content videos
+  timestamp: number;
 }
 
-const SocketContext = createContext<SocketContextProps>({
-  socket: null,
-  isConnected: false,
-  connect: () => {},
-  disconnect: () => {},
-});
+interface VideoQueueContextType {
+  queue: VideoQueueItem[];
+  addToQueue: (item: Omit<VideoQueueItem, "progress" | "message" | "status" | "timestamp">) => void;
+  updateQueueItem: (processId: string, data: Partial<VideoQueueItem>) => void;
+  removeFromQueue: (processId: string) => void;
+  clearQueue: () => void;
+  setVideoUrlFromQueue: (
+    uploadType: "demo" | "content", 
+    contentIndex?: number
+  ) => { publicId?: string; duration?: number };
+}
 
-export const useSocket = () => useContext(SocketContext);
+// Tạo context
+const VideoQueueContext = createContext<VideoQueueContextType | undefined>(undefined);
 
-export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Provider Component
+export const VideoQueueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [queue, setQueue] = useState<VideoQueueItem[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  
-  // Lấy token từ Redux store
-  const { token, user } = useSelector((state: any) => state.auth);
-  
-  // Kết nối socket
-  const connect = () => {
-    // Kiểm tra nếu đã kết nối
-    if (socket && socket.connected) return;
-    
-    // Tạo kết nối mới
+
+  // Kết nối Socket.IO khi component mount
+  useEffect(() => {
+    // Kết nối đến Socket.IO server
     const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || "", {
-      transports: ["websocket"],
-      auth: { token },
-      autoConnect: false,
+      path: "/socket.io",
+      transports: ["polling", "websocket"]
     });
     
-    // Set up event listeners
     socketInstance.on("connect", () => {
-      console.log("Socket connected");
-      setIsConnected(true);
+      console.log("Socket connected for video queue updates");
     });
     
     socketInstance.on("disconnect", () => {
-      console.log("Socket disconnected");
-      setIsConnected(false);
+      console.log("Socket disconnected from video queue updates");
     });
     
-    socketInstance.on("connect_error", (err) => {
-      console.error("Socket connection error:", err.message);
-      setIsConnected(false);
+    // Lắng nghe cập nhật tiến độ video
+    socketInstance.on("videoProgress", (data: any) => {
+      console.log("Video progress update:", data);
+      
+      // Cập nhật item trong queue
+      setQueue((prevQueue) => {
+        // Tìm video trong queue
+        const index = prevQueue.findIndex(item => item.processId === data.processId);
+        
+        if (index !== -1) {
+          // Cập nhật thông tin
+          const updatedQueue = [...prevQueue];
+          updatedQueue[index] = {
+            ...updatedQueue[index],
+            progress: data.progress,
+            message: data.message,
+            status: data.progress === 100 
+              ? data.result?.error ? "error" : "success" 
+              : "processing",
+            result: data.result,
+            timestamp: data.timestamp,
+          };
+
+          // Thông báo khi hoàn thành
+          if (data.progress === 100) {
+            if (data.result?.error) {
+              toast.error(`Upload failed: ${data.message}`);
+            } else {
+              toast.success(`Upload complete: ${updatedQueue[index].fileName}`);
+            }
+          }
+          
+          return updatedQueue;
+        }
+        
+        return prevQueue;
+      });
     });
     
-    // Kết nối socket
-    socketInstance.connect();
-    
-    // Lưu socket instance
     setSocket(socketInstance);
-  };
-  
-  // Ngắt kết nối socket
-  const disconnect = () => {
-    if (socket) {
-      socket.disconnect();
-      setSocket(null);
-      setIsConnected(false);
-    }
-  };
-  
-  // Tự động kết nối khi có token
-  useEffect(() => {
-    if (token && user) {
-      connect();
-    } else {
-      disconnect();
-    }
     
     // Cleanup khi unmount
     return () => {
-      if (socket) {
-        socket.disconnect();
-      }
+      socketInstance.disconnect();
     };
-  }, [token, user]);
-  
+  }, []);
+
+  // Thêm video vào queue
+  const addToQueue = (item: Omit<VideoQueueItem, "progress" | "message" | "status" | "timestamp">) => {
+    const newItem: VideoQueueItem = {
+      ...item,
+      progress: 0,
+      message: "Waiting to process...",
+      status: "pending",
+      timestamp: Date.now(),
+    };
+    
+    setQueue((prev) => [...prev, newItem]);
+  };
+
+  // Cập nhật thông tin của một video trong queue
+  const updateQueueItem = (processId: string, data: Partial<VideoQueueItem>) => {
+    setQueue((prev) => 
+      prev.map((item) => 
+        item.processId === processId ? { ...item, ...data } : item
+      )
+    );
+  };
+
+  // Xóa video khỏi queue
+  const removeFromQueue = (processId: string) => {
+    setQueue((prev) => prev.filter((item) => item.processId !== processId));
+  };
+
+  // Xóa toàn bộ queue
+  const clearQueue = () => {
+    setQueue([]);
+  };
+
+  // Lấy thông tin publicId và duration từ video đã upload thành công
+  // để cập nhật vào form
+  const setVideoUrlFromQueue = (uploadType: "demo" | "content", contentIndex?: number) => {
+    // Tìm video phù hợp nhất trong queue (mới nhất, đã hoàn thành, đúng loại)
+    const matchedVideos = queue.filter(item => 
+      item.uploadType === uploadType && 
+      item.status === "success" &&
+      (uploadType === "content" ? item.contentIndex === contentIndex : true)
+    );
+    
+    if (matchedVideos.length === 0) {
+      return { publicId: undefined, duration: undefined };
+    }
+    
+    // Lấy video mới nhất
+    const latestVideo = matchedVideos.sort((a, b) => b.timestamp - a.timestamp)[0];
+    
+    return { 
+      publicId: latestVideo.result?.publicId,
+      duration: latestVideo.result?.duration
+    };
+  };
+
   return (
-    <SocketContext.Provider value={{ socket, isConnected, connect, disconnect }}>
+    <VideoQueueContext.Provider
+      value={{
+        queue,
+        addToQueue,
+        updateQueueItem,
+        removeFromQueue,
+        clearQueue,
+        setVideoUrlFromQueue,
+      }}
+    >
       {children}
-    </SocketContext.Provider>
+    </VideoQueueContext.Provider>
   );
 };
-```
 
-### 3.2. Hook Sử Dụng Thông Báo Realtime
-
-```tsx
-// Frontend/app/hooks/useNotifications.ts
-"use client";
-import { useState, useEffect } from "react";
-import { useSocket } from "../utils/SocketContext";
-import { useDispatch } from "react-redux";
-import { addNotification } from "@/redux/features/notifications/notificationsSlice";
-import { toast } from "react-hot-toast";
-
-interface Notification {
-  _id: string;
-  title: string;
-  message: string;
-  status: "read" | "unread";
-  userId: string;
-  createdAt: string;
-}
-
-export const useNotifications = () => {
-  const { socket, isConnected } = useSocket();
-  const dispatch = useDispatch();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  
-  // Lắng nghe sự kiện thông báo mới
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-    
-    // Handler khi nhận thông báo mới
-    const handleNewNotification = (notification: Notification) => {
-      // Cập nhật state
-      setNotifications((prev) => [notification, ...prev]);
-      
-      // Thêm vào Redux store
-      dispatch(addNotification(notification));
-      
-      // Hiển thị toast thông báo
-      toast(notification.title, {
-        description: notification.message,
-        style: {
-          borderRadius: "10px",
-          background: "#333",
-          color: "#fff",
-        },
-      });
-    };
-    
-    // Đăng ký lắng nghe sự kiện
-    socket.on("newNotification", handleNewNotification);
-    
-    // Cleanup
-    return () => {
-      socket.off("newNotification", handleNewNotification);
-    };
-  }, [socket, isConnected, dispatch]);
-  
-  // Gửi thông báo tới người dùng hoặc admin
-  const sendNotification = (data: {
-    title: string;
-    message: string;
-    userId?: string;
-    toAdmin?: boolean;
-  }) => {
-    if (!socket || !isConnected) return;
-    
-    socket.emit("notification", data);
-  };
-  
-  return {
-    notifications,
-    sendNotification,
-  };
+// Custom hook để sử dụng context
+export const useVideoQueue = () => {
+  const context = useContext(VideoQueueContext);
+  if (context === undefined) {
+    throw new Error("useVideoQueue must be used within a VideoQueueProvider");
+  }
+  return context;
 };
 ```
 
-### 3.3. Hook Sử Dụng Chat Realtime
+### 3.2. VideoQueue Component
+
+Hiển thị danh sách video đang được xử lý và tiến trình của chúng.
 
 ```tsx
-// Frontend/app/hooks/useChat.ts
+// Frontend/app/components/VideoQueue/VideoQueue.tsx
 "use client";
-import { useState, useEffect } from "react";
-import { useSocket } from "../utils/SocketContext";
-import { useSelector } from "react-redux";
+import React, { useState } from "react";
+import { useVideoQueue } from "@/app/contexts/VideoQueueContext";
+import VideoQueueItem from "./VideoQueueItem";
+import { FiXCircle, FiChevronDown, FiChevronUp } from "react-icons/fi";
 
-interface Message {
-  _id: string;
-  content: string;
-  sender: string;
-  recipient: string;
-  status: "sent" | "delivered" | "read";
-  createdAt: string;
-}
-
-export const useChat = (recipientId: string) => {
-  const { socket, isConnected } = useSocket();
-  const { user } = useSelector((state: any) => state.auth);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+const VideoQueue: React.FC = () => {
+  const { queue, clearQueue } = useVideoQueue();
+  const [isCollapsed, setIsCollapsed] = useState(false);
   
-  // Lấy lịch sử tin nhắn
-  useEffect(() => {
-    if (!recipientId || !user?._id) return;
-    
-    setLoading(true);
-    
-    // Gọi API để lấy lịch sử chat
-    fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}/message/history/${recipientId}`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setMessages(data.messages);
-        } else {
-          setError(data.message);
-        }
-      })
-      .catch((err) => {
-        setError("Failed to load chat history");
-        console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [recipientId, user?._id]);
+  // Không hiển thị nếu không có video trong queue
+  if (queue.length === 0) {
+    return null;
+  }
   
-  // Lắng nghe tin nhắn mới
-  useEffect(() => {
-    if (!socket || !isConnected || !user?._id) return;
-    
-    // Handler khi nhận tin nhắn mới
-    const handleNewMessage = (message: Message) => {
-      // Chỉ hiển thị tin nhắn liên quan đến cuộc trò chuyện hiện tại
-      if (
-        (message.sender === recipientId && message.recipient === user._id) ||
-        (message.sender === user._id && message.recipient === recipientId)
-      ) {
-        setMessages((prev) => [...prev, message]);
-        
-        // Đánh dấu là đã đọc nếu người dùng hiện tại là người nhận
-        if (message.recipient === user._id) {
-          socket.emit("markAsRead", { messageId: message._id });
-        }
-      }
-    };
-    
-    // Đăng ký lắng nghe sự kiện
-    socket.on("newMessage", handleNewMessage);
-    
-    // Cleanup
-    return () => {
-      socket.off("newMessage", handleNewMessage);
-    };
-  }, [socket, isConnected, recipientId, user?._id]);
-  
-  // Gửi tin nhắn mới
-  const sendMessage = (content: string) => {
-    if (!socket || !isConnected || !user?._id || !recipientId) return;
-    
-    const messageData = {
-      content,
-      senderId: user._id,
-      recipientId,
-    };
-    
-    // Gửi tin nhắn qua socket
-    socket.emit("message", messageData);
-    
-    // Cập nhật UI ngay lập tức (optimistic update)
-    const tempMessage: Message = {
-      _id: Date.now().toString(), // Temporary ID
-      content,
-      sender: user._id,
-      recipient: recipientId,
-      status: "sent",
-      createdAt: new Date().toISOString(),
-    };
-    
-    setMessages((prev) => [...prev, tempMessage]);
-  };
-  
-  return {
-    messages,
-    loading,
-    error,
-    sendMessage,
-  };
-};
-```
-
-### 3.4. Hook Sử Dụng Trạng Thái Online
-
-```tsx
-// Frontend/app/hooks/useOnlineStatus.ts
-"use client";
-import { useState, useEffect } from "react";
-import { useSocket } from "../utils/SocketContext";
-
-export const useOnlineStatus = (userIds: string[]) => {
-  const { socket, isConnected } = useSocket();
-  const [onlineUsers, setOnlineUsers] = useState<Record<string, boolean>>({});
-  
-  // Lắng nghe cập nhật trạng thái người dùng
-  useEffect(() => {
-    if (!socket || !isConnected || !userIds.length) return;
-    
-    // Request status for specific users
-    socket.emit("getUsersStatus", userIds);
-    
-    // Listen for status updates
-    const handleStatusUpdate = (data: { userId: string; status: boolean }) => {
-      if (userIds.includes(data.userId)) {
-        setOnlineUsers((prev) => ({
-          ...prev,
-          [data.userId]: data.status,
-        }));
-      }
-    };
-    
-    socket.on("userStatusUpdate", handleStatusUpdate);
-    
-    // Clean up
-    return () => {
-      socket.off("userStatusUpdate", handleStatusUpdate);
-    };
-  }, [socket, isConnected, userIds]);
-  
-  // Set own status
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-    
-    // Set online status
-    socket.emit("userStatus", true);
-    
-    // Set up page visibility and focus event handlers
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        socket.emit("userStatus", true);
-      } else {
-        socket.emit("userStatus", false);
-      }
-    };
-    
-    const handleFocus = () => socket.emit("userStatus", true);
-    const handleBlur = () => socket.emit("userStatus", false);
-    
-    // Add event listeners
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("blur", handleBlur);
-    
-    // Before unload (page close)
-    window.addEventListener("beforeunload", () => {
-      socket.emit("userStatus", false);
-    });
-    
-    // Clean up
-    return () => {
-      socket.emit("userStatus", false);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("blur", handleBlur);
-    };
-  }, [socket, isConnected]);
-  
-  // Check if a specific user is online
-  const isUserOnline = (userId: string) => {
-    return !!onlineUsers[userId];
-  };
-  
-  return {
-    onlineUsers,
-    isUserOnline,
-  };
-};
-```
-
-## 4. Component Realtime
-
-### 4.1. Notification Component
-
-```tsx
-// Frontend/app/components/Notification/NotificationCenter.tsx
-"use client";
-import React, { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { 
-  useGetUserNotificationsQuery,
-  useUpdateNotificationMutation,
-} from "@/redux/features/notifications/notificationsApi";
-import { useNotifications } from "@/app/hooks/useNotifications";
-import { IoMdNotifications } from "react-icons/io";
-import { motion, AnimatePresence } from "framer-motion";
-import Loader from "../Loader/Loader";
-import { styles } from "@/app/styles/style";
-
-interface Notification {
-  _id: string;
-  title: string;
-  message: string;
-  status: "read" | "unread";
-  createdAt: string;
-}
-
-const NotificationCenter: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const dispatch = useDispatch();
-  
-  // Fetch notifications from API
-  const { data, isLoading, refetch } = useGetUserNotificationsQuery(undefined, {
-    pollingInterval: 60000, // Poll every minute for new notifications
-  });
-  
-  // Get realtime notifications
-  const { notifications } = useNotifications();
-  
-  // Update notification mutation
-  const [updateNotification] = useUpdateNotificationMutation();
-  
-  // Count unread notifications
-  useEffect(() => {
-    if (data && data.notifications) {
-      const count = data.notifications.filter(
-        (notification: Notification) => notification.status === "unread"
-      ).length;
-      setUnreadCount(count);
-    }
-  }, [data]);
-  
-  // Mark notification as read
-  const handleNotificationClick = async (id: string) => {
-    try {
-      await updateNotification(id).unwrap();
-      refetch();
-    } catch (error) {
-      console.error("Failed to mark notification as read", error);
-    }
-  };
-  
-  // Toggle notification panel
-  const toggleNotifications = () => {
-    setIsOpen(!isOpen);
-  };
-  
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+  // Đếm các videos theo trạng thái
+  const countByStatus = {
+    pending: queue.filter(item => item.status === "pending").length,
+    processing: queue.filter(item => item.status === "processing").length,
+    success: queue.filter(item => item.status === "success").length,
+    error: queue.filter(item => item.status === "error").length,
   };
   
   return (
-    <div className="relative">
-      {/* Notification Icon */}
-      <button
-        onClick={toggleNotifications}
-        className="relative p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full focus:outline-none"
-      >
-        <IoMdNotifications size={24} />
-        {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {unreadCount}
-          </span>
-        )}
-      </button>
-      
-      {/* Notification Panel */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50 overflow-hidden"
+    <div className="fixed bottom-4 right-4 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50 max-h-[70vh] flex flex-col">
+      {/* Header */}
+      <div className="p-3 border-b dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-t-lg">
+        <div className="flex items-center">
+          <h3 className="text-sm font-semibold">Video Upload Queue</h3>
+          <div className="flex ml-2 text-xs">
+            {countByStatus.processing > 0 && (
+              <span className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded-full mr-1">
+                {countByStatus.processing} processing
+              </span>
+            )}
+            {countByStatus.success > 0 && (
+              <span className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-0.5 rounded-full mr-1">
+                {countByStatus.success} done
+              </span>
+            )}
+            {countByStatus.error > 0 && (
+              <span className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-0.5 rounded-full">
+                {countByStatus.error} failed
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center">
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mr-2"
           >
-            <div className="p-4 border-b dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                Notifications
-              </h3>
-            </div>
-            
-            <div className="max-h-96 overflow-y-auto">
-              {isLoading ? (
-                <div className="p-4 flex justify-center">
-                  <Loader />
-                </div>
-              ) : data?.notifications?.length > 0 ? (
-                <div>
-                  {data.notifications.map((notification: Notification) => (
-                    <div
-                      key={notification._id}
-                      onClick={() => handleNotificationClick(notification._id)}
-                      className={`p-4 border-b dark:border-gray-700 cursor-pointer ${
-                        notification.status === "unread"
-                          ? "bg-blue-50 dark:bg-blue-900/20"
-                          : ""
-                      }`}
-                    >
-                      <h4 className="font-medium text-gray-800 dark:text-white">
-                        {notification.title}
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {formatDate(notification.createdAt)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                  No notifications
-                </div>
-              )}
-            </div>
-            
-            <div className="p-3 text-center border-t dark:border-gray-700">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={`${styles.button} !bg-blue-600 hover:!bg-blue-700 !text-white w-full !h-[30px] !rounded-md`}
-              >
-                Close
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {isCollapsed ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
+          </button>
+          <button 
+            onClick={clearQueue}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          >
+            <FiXCircle size={18} />
+          </button>
+        </div>
+      </div>
+      
+      {/* Queue content */}
+      {!isCollapsed && (
+        <div className="p-2 overflow-y-auto">
+          {queue.length === 0 ? (
+            <p className="text-center text-gray-500 text-sm py-4">No videos in queue</p>
+          ) : (
+            queue.map((item) => (
+              <VideoQueueItem key={item.processId} item={item} />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
-export default NotificationCenter;
+export default VideoQueue;
 ```
 
-### 4.2. Chat Component
+### 3.3. VideoQueueItem Component
+
+Hiển thị thông tin chi tiết và tiến trình của từng video.
 
 ```tsx
-// Frontend/app/components/Chat/ChatRoom.tsx
-"use client";
-import React, { useState, useRef, useEffect } from "react";
-import { useChat } from "@/app/hooks/useChat";
-import { useOnlineStatus } from "@/app/hooks/useOnlineStatus";
-import { useSelector } from "react-redux";
-import { BiSend } from "react-icons/bi";
-import { BsDot } from "react-icons/bs";
-import { IoMdClose } from "react-icons/io";
-import { motion } from "framer-motion";
-import { styles } from "@/app/styles/style";
-
-interface ChatRoomProps {
-  recipientId: string;
-  recipientName: string;
-  onClose: () => void;
-  minimized?: boolean;
-  onMinimize?: () => void;
-}
-
-const ChatRoom: React.FC<ChatRoomProps> = ({
-  recipientId,
-  recipientName,
-  onClose,
-  minimized = false,
-  onMinimize,
-}) => {
-  const [message, setMessage] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useSelector((state: any) => state.auth);
-  
-  // Get chat messages
-  const { messages, loading, error, sendMessage } = useChat(recipientId);
-  
-  // Check if recipient is online
-  const { isUserOnline } = useOnlineStatus([recipientId]);
-  const isOnline = isUserOnline(recipientId);
-  
-  // Scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (messagesEndRef.current && !minimized) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, minimized]);
-  
-  // Handle sending message
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim()) {
-      sendMessage(message);
-      setMessage("");
-    }
-  };
-  
-  // Render minimized chat
-  if (minimized) {
-    return (
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="fixed bottom-4 right-4 bg-blue-600 text-white rounded-full p-3 shadow-lg cursor-pointer z-40"
-        onClick={onMinimize}
-      >
-        <div className="flex items-center">
-          <span className="font-medium">{recipientName}</span>
-          {isOnline && (
-            <BsDot size={24} className="text-green-400" />
-          )}
-        </div>
-      </motion.div>
-    );
-  }
-  
-  return (
-    <motion.div
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="fixed bottom-4 right-4 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-40 flex flex-col overflow-hidden"
-      style={{ height: "400px" }}
-    >
-      {/* Chat Header */}
-      <div className="bg-blue-600 text-white p-3 flex justify-between items-center">
-        <div className="flex items-center">
-          <span className="font-medium">{recipientName}</span>
-          {isOnline && (
-            <BsDot size={24} className="text-green-400" />
-          )}
-        </div>
-        <div className="flex gap-2">
-          {onMinimize && (
-            <button
-              onClick={onMinimize}
-              className="text-white hover:text-gray-200"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="text-white hover:text-gray-200"
-          >
-            <IoMdClose size={16} />
-          </button>
-        </div>
-      </div>
-      
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-900">
-        {loading ? (
-          <div className="flex justify-center items-center h-full">
-            <span className="text-gray-500 dark:text-gray-400">Loading...</span>
-          </div>
-        ) : error ? (
-          <div className="flex justify-center items-center h-full">
-            <span className="text-red-500">{error}</span>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex justify-center items-center h-full">
-            <span className="text-gray-500 dark:text-gray-400">
-              No messages yet. Start a conversation!
-            </span>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {messages.map((msg) => (
-              <div
-                key={msg._id}
-                className={`flex ${
-                  msg.sender === user._id ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-[70%] rounded-lg p-3 ${
-                    msg.sender === user._id
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white"
-                  }`}
-                >
-                  <p>{msg.content}</p>
-                  <p className="text-xs mt-1 opacity-70">
-                    {new Date(msg.createdAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
-      
-      {/* Chat Input */}
-      <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
-        <div className="flex">
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 border dark:border-gray-600 rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
-          />
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-3 py-2 rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
-            disabled={!message.trim()}
-          >
-            <BiSend size={20} />
-          </button>
-        </div>
-      </form>
-    </motion.div>
-  );
-};
-
-export default ChatRoom;
-```
-
-### 4.3. Online Status Indicator
-
-```tsx
-// Frontend/app/components/User/OnlineStatus.tsx
+// Frontend/app/components/VideoQueue/VideoQueueItem.tsx
 "use client";
 import React from "react";
-import { useOnlineStatus } from "@/app/hooks/useOnlineStatus";
-import { BsDot } from "react-icons/bs";
+import { VideoQueueItem as VideoQueueItemType } from "@/app/contexts/VideoQueueContext";
+import { FiFile, FiCheckCircle, FiAlertCircle, FiClock } from "react-icons/fi";
 
-interface OnlineStatusProps {
-  userId: string;
-  showLabel?: boolean;
-  labelPosition?: "left" | "right";
-  size?: "sm" | "md" | "lg";
+interface Props {
+  item: VideoQueueItemType;
 }
 
-const OnlineStatus: React.FC<OnlineStatusProps> = ({
-  userId,
-  showLabel = false,
-  labelPosition = "right",
-  size = "md",
-}) => {
-  const { isUserOnline } = useOnlineStatus([userId]);
-  const isOnline = isUserOnline(userId);
-  
-  // Size configuration
-  const dotSizes = {
-    sm: 12,
-    md: 16,
-    lg: 24,
+const VideoQueueItem: React.FC<Props> = ({ item }) => {
+  // Hàm định dạng thời gian từ duration (seconds)
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return "Unknown";
+    
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
   };
-  
-  // Label text
-  const statusText = isOnline ? "Online" : "Offline";
-  
-  // If no label, just show the dot
-  if (!showLabel) {
-    return (
-      <span className={`inline-block ${isOnline ? "text-green-500" : "text-gray-400"}`}>
-        <BsDot size={dotSizes[size]} />
-      </span>
-    );
-  }
-  
-  // With label
+
+  // Xác định icon theo trạng thái
+  const getStatusIcon = () => {
+    switch (item.status) {
+      case "success":
+        return <FiCheckCircle className="text-green-500" size={18} />;
+      case "error":
+        return <FiAlertCircle className="text-red-500" size={18} />;
+      case "processing":
+        return (
+          <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        );
+      default:
+        return <FiClock className="text-gray-400" size={18} />;
+    }
+  };
+
+  // Truncate file name if too long
+  const truncateFileName = (name: string, maxLength = 25) => {
+    if (name.length <= maxLength) return name;
+    
+    const extension = name.split('.').pop() || '';
+    const nameWithoutExt = name.substring(0, name.length - extension.length - 1);
+    
+    const truncatedName = nameWithoutExt.substring(0, maxLength - 3 - extension.length);
+    return `${truncatedName}...${extension}`;
+  };
+
   return (
-    <div className="flex items-center">
-      {labelPosition === "left" && (
-        <span className="text-sm text-gray-600 dark:text-gray-300 mr-1">
-          {statusText}
-        </span>
-      )}
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center">
+          <FiFile className="mr-2 text-gray-400" size={16} />
+          <span className="font-medium text-sm" title={item.fileName}>
+            {truncateFileName(item.fileName)}
+          </span>
+        </div>
+        <div className="flex items-center">
+          <span className="text-xs text-gray-500 mr-2">
+            {item.status === "success" && item.result?.duration && 
+              `${formatDuration(item.result.duration)}`
+            }
+          </span>
+          {getStatusIcon()}
+        </div>
+      </div>
       
-      <span className={`inline-block ${isOnline ? "text-green-500" : "text-gray-400"}`}>
-        <BsDot size={dotSizes[size]} />
-      </span>
+      {/* Progress bar */}
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+        <div 
+          className={`h-1.5 rounded-full ${
+            item.status === "error" 
+              ? "bg-red-500" 
+              : item.status === "success" 
+                ? "bg-green-500" 
+                : "bg-blue-500"
+          }`}
+          style={{ width: `${item.progress}%` }}
+        ></div>
+      </div>
       
-      {labelPosition === "right" && (
-        <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">
-          {statusText}
-        </span>
-      )}
+      {/* Message */}
+      <p className="text-xs text-gray-500 mt-1">{item.message}</p>
     </div>
   );
 };
 
-export default OnlineStatus;
+export default VideoQueueItem;
 ```
 
-### 4.4. Active Viewers Count
-
-```tsx
-// Frontend/app/components/Course/ActiveViewers.tsx
-"use client";
-import React, { useEffect, useState } from "react";
-import { useSocket } from "@/app/utils/SocketContext";
-import { FaEye } from "react-icons/fa";
-
-interface ActiveViewersProps {
-  videoId: string;
-}
-
-const ActiveViewers: React.FC<ActiveViewersProps> = ({ videoId }) => {
-  const { socket, isConnected } = useSocket();
-  const [viewerCount, setViewerCount] = useState(0);
-  
-  useEffect(() => {
-    if (!socket || !isConnected || !videoId) return;
-    
-    // Emit watching event when component mounts
-    socket.emit("watchingVideo", { videoId });
-    
-    // Listen for viewer count updates
-    const handleViewerCount = (data: { count: number }) => {
-      setViewerCount(data.count);
-    };
-    
-    socket.on("viewerCount", handleViewerCount);
-    
-    // Cleanup
-    return () => {
-      socket.off("viewerCount", handleViewerCount);
-      socket.emit("leaveVideo", { videoId });
-    };
-  }, [socket, isConnected, videoId]);
-  
-  return (
-    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-      <FaEye className="mr-1" />
-      <span>{viewerCount} watching now</span>
-    </div>
-  );
-};
-
-export default ActiveViewers;
-```
-
-## 5. Tổng Hợp Realtime Redux
-
-### 5.1. Notification Slice
-
-```typescript
-// Frontend/redux/features/notifications/notificationsSlice.ts
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-interface Notification {
-  _id: string;
-  title: string;
-  message: string;
-  status: "read" | "unread";
-  userId: string;
-  createdAt: string;
-}
-
-interface NotificationsState {
-  notifications: Notification[];
-  newNotificationsCount: number;
-}
-
-const initialState: NotificationsState = {
-  notifications: [],
-  newNotificationsCount: 0,
-};
-
-const notificationsSlice = createSlice({
-  name: "notifications",
-  initialState,
-  reducers: {
-    setNotifications: (state, action: PayloadAction<Notification[]>) => {
-      state.notifications = action.payload;
-      state.newNotificationsCount = action.payload.filter(
-        (notification) => notification.status === "unread"
-      ).length;
-    },
-    addNotification: (state, action: PayloadAction<Notification>) => {
-      // Add at the beginning of the array (newest first)
-      state.notifications = [action.payload, ...state.notifications];
-      
-      // Increment unread count if the notification is unread
-      if (action.payload.status === "unread") {
-        state.newNotificationsCount += 1;
-      }
-    },
-    markNotificationAsRead: (state, action: PayloadAction<string>) => {
-      const index = state.notifications.findIndex(
-        (notification) => notification._id === action.payload
-      );
-      
-      if (index !== -1) {
-        // Update notification status
-        state.notifications[index].status = "read";
-        
-        // Decrement unread count
-        if (state.newNotificationsCount > 0) {
-          state.newNotificationsCount -= 1;
-        }
-      }
-    },
-    clearNotifications: (state) => {
-      state.notifications = [];
-      state.newNotificationsCount = 0;
-    },
-  },
-});
-
-export const {
-  setNotifications,
-  addNotification,
-  markNotificationAsRead,
-  clearNotifications,
-} = notificationsSlice.actions;
-
-export default notificationsSlice.reducer;
-```
-
-### 5.2. Notification API
-
-```typescript
-// Frontend/redux/features/notifications/notificationsApi.ts
-import { apiSlice } from "../api/apiSlice";
-import { setNotifications, markNotificationAsRead } from "./notificationsSlice";
-
-export const notificationsApi = apiSlice.injectEndpoints({
-  endpoints: (builder) => ({
-    getAllNotifications: builder.query({
-      query: () => ({
-        url: "get-all-notifications",
-        method: "GET",
-        credentials: "include" as const,
-      }),
-    }),
-    getUserNotifications: builder.query({
-      query: () => ({
-        url: "get-user-notifications",
-        method: "GET",
-        credentials: "include" as const,
-      }),
-      async onQueryStarted(arg, { queryFulfilled, dispatch }) {
-        try {
-          const { data } = await queryFulfilled;
-          dispatch(setNotifications(data.notifications));
-        } catch (error) {
-          console.error("Error fetching notifications:", error);
-        }
-      },
-      providesTags: ["Notifications"],
-    }),
-    updateNotification: builder.mutation({
-      query: (id) => ({
-        url: `update-notification/${id}`,
-        method: "PUT",
-        credentials: "include" as const,
-      }),
-      async onQueryStarted(id, { dispatch, queryFulfilled }) {
-        try {
-          await queryFulfilled;
-          dispatch(markNotificationAsRead(id));
-        } catch (error) {
-          console.error("Error updating notification:", error);
-        }
-      },
-      invalidatesTags: ["Notifications"],
-    }),
-  }),
-});
-
-export const {
-  useGetAllNotificationsQuery,
-  useGetUserNotificationsQuery,
-  useUpdateNotificationMutation,
-} = notificationsApi;
-```
-
-## 6. Tích Hợp Socket.IO Với App Layout
+### 3.4. Tích Hợp Video Queue với App Layout
 
 ```tsx
 // Frontend/app/layout.tsx
-import { SocketProvider } from "./utils/SocketContext";
+"use client";
+import type { Metadata } from "next";
+import { Inter, Poppins, Josefin_Sans } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "./utils/theme-provider";
+import { Toaster } from "react-hot-toast";
 import { Providers } from "./Provider";
+import { SessionProvider } from "next-auth/react";
+import React, { FC, useEffect } from "react";
+import { VideoQueueProvider } from "./contexts/VideoQueueContext";
+import VideoQueue from "./components/VideoQueue/VideoQueue";
+import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
+import Loader from "./components/Loader/Loader";
+import socketIO from "socket.io-client";
+const ENDPOINT = process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || "";
+const socketId = socketIO(ENDPOINT, { transports: ["websocket"] });
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-Poppins",
+});
+
+const josefin = Josefin_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-Josefin",
+});
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning={true}>
+      <body
+        className={`${poppins.variable} ${josefin.variable} !bg-white bg-no-repeat dark:bg-gradient-to-b dark:from-gray-900 dark:to-black duration-300`}
+      >
         <Providers>
-          <SocketProvider>
-            {children}
-          </SocketProvider>
+          <SessionProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <Custom>{children}</Custom>
+              <Toaster position="top-center" reverseOrder={false} />
+            </ThemeProvider>
+          </SessionProvider>
         </Providers>
       </body>
     </html>
   );
 }
+
+const Custom: FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isLoading } = useLoadUserQuery({});
+
+  useEffect(() => {
+    socketId.on("connection", () => {});
+  }, []);
+
+  return (
+    <VideoQueueProvider>
+      <div>{isLoading ? <Loader /> : <div>{children} <VideoQueue /></div>}</div>
+    </VideoQueueProvider>
+  );
+};
 ```
 
-## 7. Tối Ưu Hóa Hiệu Suất Socket.IO
+## 4. Thông Báo Realtime
 
-### 7.1. Server-Side Optimizations
+### 4.1. Luồng Xử Lý Thông Báo
+
+```mermaid
+graph TD
+    A[Sự kiện xảy ra] --> B[Tạo thông báo]
+    B --> C[Lưu vào database]
+    B --> D[Emit event qua Socket.IO]
+    D --> E[Frontend nhận thông báo]
+    E --> F[Hiển thị Toast]
+    E --> G[Cập nhật UI]
+```
+
+### 4.2. Backend Event Handlers
 
 ```typescript
 // Backend/socketServer.ts
-// Thêm cấu hình tối ưu
-import { Server as SocketIOServer, ServerOptions } from "socket.io";
+// Trong phần io.on("connection")
+
+// Xử lý thông báo khi người dùng mua khóa học
+socket.on("buyCourse", async (data) => {
+  try {
+    // Tạo thông báo cho admin
+    const adminNotification = {
+      title: "New Course Purchase",
+      message: `${data.userName} purchased ${data.courseName}`,
+      userId: null,
+      toAdmin: true,
+    };
+    
+    // Tạo thông báo cho người bán khóa học (instructor)
+    const instructorNotification = {
+      title: "Course Purchased",
+      message: `Your course "${data.courseName}" was purchased by a new student`,
+      userId: data.instructorId,
+    };
+    
+    // Lưu thông báo vào DB
+    await saveNotificationToDB(adminNotification);
+    await saveNotificationToDB(instructorNotification);
+    
+    // Gửi thông báo
+    io.to("admin").emit("newNotification", adminNotification);
+    io.to(`user:${data.instructorId}`).emit("newNotification", instructorNotification);
+    
+    // Phát âm thanh thông báo nếu instructor đang online
+    io.to(`user:${data.instructorId}`).emit("playNotificationSound");
+  } catch (error) {
+    console.error("Error handling course purchase notification:", error);
+  }
+});
+
+// Xử lý tiến trình video
+socket.on("videoProcessing", (data) => {
+  try {
+    // Gửi cập nhật tiến trình video
+    io.to(`user:${data.userId}`).emit("videoProgress", {
+      processId: data.processId,
+      fileName: data.fileName,
+      progress: data.progress,
+      message: data.message,
+      status: data.status,
+      result: data.result,
+      timestamp: Date.now(),
+    });
+  } catch (error) {
+    console.error("Error handling video processing update:", error);
+  }
+});
+```
+
+## 5. Tối Ưu Hóa Hiệu Suất Socket.IO
+
+### 5.1. Server-Side Optimizations
+
+```typescript
+// Backend/utils/socketConfig.ts
+import { ServerOptions } from "socket.io";
 
 // Socket.IO options
-const socketOptions: Partial<ServerOptions> = {
+export const socketOptions: Partial<ServerOptions> = {
   cors: {
     origin: process.env.ORIGIN?.split(",") || ["http://localhost:3000"],
     credentials: true,
   },
-  adapter: createAdapter(pubClient, subClient),
   transports: ["websocket", "polling"],
   pingTimeout: 60000, // 60 seconds
   pingInterval: 25000, // 25 seconds
   connectTimeout: 10000, // 10 seconds
   maxHttpBufferSize: 1e6, // 1MB
+  // Các cài đặt để giảm sử dụng băng thông và tài nguyên
+  perMessageDeflate: {
+    threshold: 1024, // Chỉ nén messages lớn hơn 1KB
+  },
+  allowEIO3: true, // Hỗ trợ engine.io phiên bản 3
 };
 
-// Cấu hình Redis adapter để scale
-const io = new SocketIOServer(server, socketOptions);
+// Sử dụng trong socketServer.ts
+import { socketOptions } from "./utils/socketConfig";
 
-// Xử lý nhiều kết nối
-io.on("connection", (socket) => {
-  // Set socket timeout
-  socket.conn.setTimeout(60000);
-  
-  // Lưu thông tin socket vào Redis để chia sẻ giữa các node (khi scale horizontally)
-  if (socket.data.user?.id) {
-    redisClient.set(`user:${socket.data.user.id}:socket`, socket.id, "EX", 3600);
-  }
-  
-  // Batch message sending
-  socket.use(([event, ...args], next) => {
-    if (event === "batchMessages") {
-      // Process batch of messages
-      const messages = args[0];
-      messages.forEach((message: any) => {
-        socket.emit(message.event, message.data);
-      });
-      return;
-    }
-    next();
-  });
-  
-  // Giám sát và log các sự kiện quan trọng
-  socket.on("error", (error) => {
-    console.error(`Socket error (${socket.id}):`, error);
-  });
-  
-  socket.conn.on("packet", (packet) => {
-    if (packet.type === "error") {
-      console.error(`Socket packet error (${socket.id}):`, packet.data);
-    }
-  });
-});
+const io = new SocketIOServer(server, socketOptions);
 ```
 
-### 7.2. Client-Side Optimizations
+### 5.2. Client-Side Optimizations
 
 ```typescript
-// Frontend/app/utils/SocketConfig.ts
+// Frontend/app/utils/socketConfig.ts
 import { ManagerOptions, SocketOptions } from "socket.io-client";
 
 // Cấu hình tối ưu cho Socket.IO client
 export const socketConfig: Partial<ManagerOptions & SocketOptions> = {
-  transports: ["websocket"],
-  autoConnect: false,
+  transports: ["websocket"], // Ưu tiên WebSocket
+  autoConnect: false, // Chỉ kết nối khi cần
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
   timeout: 10000,
-  forceNew: true,
-};
-
-// Sử dụng cấu hình trong SocketContext
-// Frontend/app/utils/SocketContext.tsx
-import { socketConfig } from "./SocketConfig";
-
-// Trong SocketProvider
-const connect = () => {
-  if (socket && socket.connected) return;
-  
-  const socketInstance = io(
-    process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || "",
-    {
-      ...socketConfig,
-      auth: { token },
-    }
-  );
-  
-  // Setup events...
-  
-  setSocket(socketInstance);
+  forceNew: false, // Tái sử dụng kết nối
 };
 ```
 
-## 8. Testing Socket.IO
+## 6. Video Processing Với Socket.IO
 
-### 8.1. Unit Testing Socket Handlers
+### 6.1. Luồng Xử Lý Video
+
+```mermaid
+graph TD
+    A[Upload Video] --> B[Backend nhận file]
+    B --> C[Thêm vào processing queue]
+    C --> D[Emit tiến trình 0%]
+    D --> E[Tiền xử lý video]
+    E --> F[Emit tiến trình 10%]
+    F --> G[Tạo phụ đề với AI]
+    G --> H[Emit tiến trình 50%]
+    H --> I[Gắn phụ đề vào video]
+    I --> J[Emit tiến trình 80%]
+    J --> K[Upload lên Cloudinary]
+    K --> L[Emit tiến trình 100%]
+    L --> M[Frontend cập nhật UI]
+```
+
+### 6.2. Backend Task Queue Processor
 
 ```typescript
-// Backend/tests/unit/socket.test.ts
-import { createServer } from "http";
-import { Server } from "socket.io";
-import Client from "socket.io-client";
-import { initSocketServer } from "../../socketServer";
-import jwt from "jsonwebtoken";
+// Backend/services/videoQueue.service.ts
+import Bull from 'bull';
+import { Server as SocketIOServer } from 'socket.io';
+import { processVideo, generateSubtitles } from './subtitle.service';
+import cloudinary from '../utils/cloudinary';
 
-describe("Socket Server", () => {
-  let io: Server;
-  let serverSocket: any;
-  let clientSocket: any;
-  let httpServer: any;
-  
-  beforeAll((done) => {
-    // Create HTTP server
-    httpServer = createServer();
-    
-    // Initialize Socket.IO server
-    io = initSocketServer(httpServer);
-    
-    // Start server
-    httpServer.listen(() => {
-      const port = (httpServer.address() as any).port;
-      
-      // Create fake token for testing
-      const testToken = jwt.sign(
-        { id: "test-user-id", role: "user" },
-        "test-secret"
-      );
-      
-      // Connect client
-      clientSocket = Client(`http://localhost:${port}`, {
-        auth: { token: testToken },
-        transports: ["websocket"],
-      });
-      
-      clientSocket.on("connect", () => {
-        // Get the server socket
-        const sockets = Array.from(io.sockets.sockets.values());
-        serverSocket = sockets[0];
-        done();
-      });
-    });
-  });
-  
-  afterAll(() => {
-    io.close();
-    clientSocket.close();
-    httpServer.close();
-  });
-  
-  test("should work with client-server communication", (done) => {
-    // Setup event handler on server
-    serverSocket.on("hello", (arg) => {
-      expect(arg).toBe("world");
-      serverSocket.emit("hello", "server");
-    });
-    
-    // Setup event handler on client
-    clientSocket.on("hello", (arg) => {
-      expect(arg).toBe("server");
-      done();
-    });
-    
-    // Emit event from client
-    clientSocket.emit("hello", "world");
-  });
-  
-  test("should handle notification events", (done) => {
-    // Mock data
-    const notificationData = {
-      title: "Test Notification",
-      message: "This is a test notification",
-      userId: "test-user-id",
-    };
-    
-    // Spy on notification saving function
-    const saveSpy = jest.spyOn(global, "saveNotificationToDB").mockResolvedValue(undefined);
-    
-    // Listen for notification event on server
-    serverSocket.on("notification", (data) => {
-      // Verify data
-      expect(data).toEqual(notificationData);
-      
-      // Verify notification was saved
-      expect(saveSpy).toHaveBeenCalledWith(notificationData);
-      
-      done();
-    });
-    
-    // Emit notification from client
-    clientSocket.emit("notification", notificationData);
-  });
-  
-  // More tests...
+// Tạo Redis queue
+const videoQueue = new Bull('video-processing', {
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379')
+  },
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000
+    },
+    removeOnComplete: true
+  }
 });
-```
 
-### 8.2. Integration Testing Socket với Redis
-
-```typescript
-// Backend/tests/integration/socketRedis.test.ts
-import { createServer } from "http";
-import { Server } from "socket.io";
-import Client from "socket.io-client";
-import { createAdapter } from "@socket.io/redis-adapter";
-import Redis from "ioredis";
-import jwt from "jsonwebtoken";
-
-describe("Socket.IO Redis Adapter", () => {
-  let io: Server;
-  let httpServer: any;
-  let clientSocket1: any;
-  let clientSocket2: any;
-  let pubClient: Redis;
-  let subClient: Redis;
-  
-  beforeAll(async () => {
-    // Create Redis clients
-    pubClient = new Redis();
-    subClient = pubClient.duplicate();
+// Khởi tạo service với Socket.IO instance
+export const initVideoQueueService = (io: SocketIOServer) => {
+  // Xử lý jobs
+  videoQueue.process(async (job) => {
+    const { 
+      videoPath, 
+      fileName, 
+      userId, 
+      processId, 
+      uploadType, 
+      contentIndex 
+    } = job.data;
     
-    // Create HTTP server
-    httpServer = createServer();
-    
-    // Create Socket.IO server with Redis adapter
-    io = new Server(httpServer, {
-      adapter: createAdapter(pubClient, subClient),
-    });
-    
-    // Add authentication middleware
-    io.use((socket, next) => {
-      const token = socket.handshake.auth.token;
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, "test-secret");
-          socket.data.user = decoded;
-          next();
-        } catch (error) {
-          next(new Error("Authentication error"));
+    try {
+      // Cập nhật tiến trình
+      io.to(`user:${userId}`).emit('videoProgress', {
+        processId,
+        fileName,
+        progress: 0,
+        message: 'Starting video processing...',
+        status: 'processing',
+        timestamp: Date.now()
+      });
+      
+      // Tiền xử lý video
+      io.to(`user:${userId}`).emit('videoProgress', {
+        processId,
+        progress: 10,
+        message: 'Pre-processing video...',
+        status: 'processing'
+      });
+      
+      // Tạo phụ đề với AI
+      io.to(`user:${userId}`).emit('videoProgress', {
+        processId,
+        progress: 30,
+        message: 'Generating subtitles with AI...',
+        status: 'processing'
+      });
+      
+      const { subtitles, outputVideoPath } = await processVideo(videoPath, {
+        contentType: uploadType === 'demo' ? 'lecture' : 'tutorial',
+        onProgress: (progress, message) => {
+          // Map tiến trình từ service (0-100) sang tiến trình tổng thể (30-80)
+          const mappedProgress = 30 + Math.round(progress * 0.5);
+          io.to(`user:${userId}`).emit('videoProgress', {
+            processId,
+            progress: mappedProgress,
+            message,
+            status: 'processing'
+          });
         }
-      } else {
-        next(new Error("Authentication error"));
-      }
-    });
-    
-    // Handle connections
-    io.on("connection", (socket) => {
-      // Join room based on user ID
-      if (socket.data.user?.id) {
-        socket.join(`user:${socket.data.user.id}`);
-      }
+      });
       
-      // Handle room messages
-      socket.on("roomMessage", (data) => {
-        io.to(data.room).emit("message", {
-          text: data.text,
-          from: socket.data.user?.id,
-        });
+      // Upload lên Cloudinary
+      io.to(`user:${userId}`).emit('videoProgress', {
+        processId,
+        progress: 80,
+        message: 'Uploading to cloud storage...',
+        status: 'processing'
       });
-    });
-    
-    // Start server
-    await new Promise<void>((resolve) => {
-      httpServer.listen(() => {
-        resolve();
+      
+      // Upload video lên Cloudinary
+      const result = await cloudinary.uploader.upload(outputVideoPath, {
+        resource_type: 'video',
+        folder: 'courses',
+        use_filename: true,
+        unique_filename: true
       });
-    });
-    
-    // Get port
-    const port = (httpServer.address() as any).port;
-    
-    // Create test tokens
-    const testToken1 = jwt.sign(
-      { id: "user1", role: "user" },
-      "test-secret"
-    );
-    
-    const testToken2 = jwt.sign(
-      { id: "user2", role: "user" },
-      "test-secret"
-    );
-    
-    // Connect clients
-    clientSocket1 = Client(`http://localhost:${port}`, {
-      auth: { token: testToken1 },
-    });
-    
-    clientSocket2 = Client(`http://localhost:${port}`, {
-      auth: { token: testToken2 },
-    });
-    
-    // Wait for connections
-    await Promise.all([
-      new Promise<void>((resolve) => {
-        clientSocket1.on("connect", resolve);
-      }),
-      new Promise<void>((resolve) => {
-        clientSocket2.on("connect", resolve);
-      }),
-    ]);
+      
+      // Hoàn thành
+      io.to(`user:${userId}`).emit('videoProgress', {
+        processId,
+        progress: 100,
+        message: 'Processing completed',
+        status: 'success',
+        result: {
+          publicId: result.public_id,
+          url: result.secure_url,
+          duration: result.duration,
+          format: result.format
+        },
+        timestamp: Date.now()
+      });
+      
+      return {
+        success: true,
+        publicId: result.public_id,
+        url: result.secure_url
+      };
+    } catch (error) {
+      console.error(`Error processing video ${processId}:`, error);
+      
+      // Thông báo lỗi
+      io.to(`user:${userId}`).emit('videoProgress', {
+        processId,
+        progress: 100,
+        message: `Error: ${error.message || 'Unknown error'}`,
+        status: 'error',
+        result: {
+          error: error.message
+        },
+        timestamp: Date.now()
+      });
+      
+      throw error;
+    }
   });
   
-  afterAll(() => {
-    io.close();
-    clientSocket1.close();
-    clientSocket2.close();
-    httpServer.close();
-    pubClient.quit();
-    subClient.quit();
+  // Xử lý khi job hoàn thành
+  videoQueue.on('completed', (job, result) => {
+    console.log(`Job ${job.id} completed with result:`, result);
   });
   
-  test("should broadcast to room through Redis adapter", (done) => {
-    const room = "testRoom";
-    const messageText = "Hello Redis Room";
-    
-    // Join room
-    clientSocket1.emit("join", room);
-    clientSocket2.emit("join", room);
-    
-    // Listen for messages on client 2
-    clientSocket2.on("message", (data) => {
-      expect(data.text).toBe(messageText);
-      expect(data.from).toBe("user1");
-      done();
-    });
-    
-    // Send message from client 1 to room
-    clientSocket1.emit("roomMessage", {
-      room,
-      text: messageText,
-    });
+  // Xử lý khi job thất bại
+  videoQueue.on('failed', (job, error) => {
+    console.error(`Job ${job.id} failed with error:`, error);
   });
   
-  // More tests...
-});
+  // API để thêm video vào queue
+  return {
+    addVideoToQueue: async (data: {
+      videoPath: string;
+      fileName: string;
+      userId: string;
+      processId: string;
+      uploadType: 'demo' | 'content';
+      contentIndex?: number;
+    }) => {
+      return await videoQueue.add(data);
+    }
+  };
+};
 ```
 
-## 9. Scale Socket.IO với Multiple Workers
+### 6.3. Backend Controller
+
+```typescript
+// Backend/controller/video.controller.ts
+import { Request, Response, NextFunction } from 'express';
+import { catchAsyncError } from '../middleware/catchAsyncError';
+import { videoQueueService } from '../services';
+import fs from 'fs-extra';
+import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
+
+// Upload và xử lý video
+export const uploadVideo = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { uploadType, contentIndex } = req.body;
+      const file = req.file;
+      
+      if (!file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No video file provided'
+        });
+      }
+      
+      // Tạo process ID duy nhất
+      const processId = uuidv4();
+      
+      // Thêm vào queue xử lý
+      await videoQueueService.addVideoToQueue({
+        videoPath: file.path,
+        fileName: file.originalname,
+        userId: req.user._id,
+        processId,
+        uploadType,
+        contentIndex: contentIndex ? parseInt(contentIndex) : undefined
+      });
+      
+      res.status(200).json({
+        success: true,
+        message: 'Video uploaded and processing started',
+        processId
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  }
+);
+```
+
+## 7. Kết Hợp Socket.IO và Redis
+
+### 7.1. Redis Adapter cho Scaling
 
 ```typescript
 // Backend/server.ts
@@ -1606,8 +941,10 @@ import os from "os";
 import { createAdapter } from "@socket.io/redis-adapter";
 import Redis from "ioredis";
 
+// Số CPU cores
 const numCPUs = os.cpus().length;
 
+// Xử lý clustering
 if (cluster.isPrimary) {
   console.log(`Master ${process.pid} is running`);
   
@@ -1618,7 +955,7 @@ if (cluster.isPrimary) {
   
   cluster.on("exit", (worker, code, signal) => {
     console.log(`Worker ${worker.process.pid} died`);
-    // Fork a new worker to replace the dead one
+    // Fork worker mới
     cluster.fork();
   });
 } else {
@@ -1642,33 +979,10 @@ if (cluster.isPrimary) {
   });
   
   // Set up Socket.IO handlers
-  io.on("connection", (socket) => {
-    console.log(`Socket connected: ${socket.id} on worker ${process.pid}`);
-    
-    // Join room based on user ID
-    if (socket.data.user?.id) {
-      socket.join(`user:${socket.data.user.id}`);
-      
-      // Store socket ID in Redis
-      pubClient.set(
-        `user:${socket.data.user.id}:socket`,
-        socket.id,
-        "EX",
-        3600
-      );
-    }
-    
-    // Handle events...
-    
-    socket.on("disconnect", () => {
-      console.log(`Socket disconnected: ${socket.id} on worker ${process.pid}`);
-      
-      // Remove socket ID from Redis
-      if (socket.data.user?.id) {
-        pubClient.del(`user:${socket.data.user.id}:socket`);
-      }
-    });
-  });
+  require("./socketServer").initSocketServer(io);
+  
+  // Init video queue service
+  require("./services/videoQueue.service").initVideoQueueService(io);
   
   // Start server
   const PORT = process.env.PORT || 8000;
@@ -1678,114 +992,155 @@ if (cluster.isPrimary) {
 }
 ```
 
-## 10. Monitoring Socket.IO Performance
+## 8. Tích Hợp Socket.IO với Redux
+
+### 8.1. Socket Middleware
 
 ```typescript
-// Backend/utils/socketMonitoring.ts
-import { Server } from "socket.io";
-import { performance } from "perf_hooks";
-import { promisify } from "util";
-import { RedisClient } from "redis";
+// Frontend/redux/middleware/socketMiddleware.ts
+import { io, Socket } from 'socket.io-client';
+import { Middleware } from 'redux';
+import { socketConfig } from '@/app/utils/socketConfig';
 
-// Monitoring metrics
-interface SocketMetrics {
-  totalConnections: number;
-  messagesPerSecond: number;
-  averageResponseTime: number;
-  peakConnections: number;
-  totalMessages: number;
-  activeRooms: number;
-  errorRate: number;
-}
+// Socket middleware cho Redux
+export const createSocketMiddleware = (): Middleware => {
+  let socket: Socket | null = null;
 
-// Setup socket monitoring
-export const setupSocketMonitoring = (io: Server, redisClient: RedisClient) => {
-  let metrics: SocketMetrics = {
-    totalConnections: 0,
-    messagesPerSecond: 0,
-    averageResponseTime: 0,
-    peakConnections: 0,
-    totalMessages: 0,
-    activeRooms: 0,
-    errorRate: 0,
-  };
-  
-  // Track connection count
-  const connectionCounter = () => {
-    const connectionCount = io.sockets.sockets.size;
-    metrics.totalConnections = connectionCount;
-    
-    // Update peak connections
-    if (connectionCount > metrics.peakConnections) {
-      metrics.peakConnections = connectionCount;
+  return store => next => action => {
+    // Các action related với socket
+    if (action.type === 'socket/connect') {
+      // Kết nối socket nếu chưa kết nối
+      if (!socket) {
+        const { token } = action.payload;
+        
+        socket = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || '', {
+          ...socketConfig,
+          auth: { token }
+        });
+        
+        // Lắng nghe sự kiện từ server
+        socket.on('connect', () => {
+          store.dispatch({ type: 'socket/connected' });
+        });
+        
+        socket.on('disconnect', () => {
+          store.dispatch({ type: 'socket/disconnected' });
+        });
+        
+        // Lắng nghe sự kiện thông báo mới
+        socket.on('newNotification', (notification) => {
+          store.dispatch({
+            type: 'notifications/addNotification',
+            payload: notification
+          });
+        });
+        
+        // Lắng nghe sự kiện cập nhật video
+        socket.on('videoProgress', (data) => {
+          store.dispatch({
+            type: 'videoQueue/updateProgress',
+            payload: data
+          });
+        });
+      }
     }
     
-    // Store metrics in Redis
-    redisClient.set("socket:metrics", JSON.stringify(metrics));
-  };
-  
-  // Track message count and response time
-  let messageCount = 0;
-  let totalResponseTime = 0;
-  let errorCount = 0;
-  
-  // Monitor events
-  io.on("connection", (socket) => {
-    // Increment connection count
-    connectionCounter();
+    // Ngắt kết nối socket
+    if (action.type === 'socket/disconnect' && socket) {
+      socket.disconnect();
+      socket = null;
+    }
     
-    // Track response time for all events
-    socket.use((packet, next) => {
-      const startTime = performance.now();
-      
-      // After event is processed, calculate response time
-      socket.on(packet[0] + ":response", () => {
-        const endTime = performance.now();
-        const responseTime = endTime - startTime;
-        
-        totalResponseTime += responseTime;
-        messageCount++;
-        
-        // Update metrics
-        metrics.totalMessages = messageCount;
-        metrics.averageResponseTime = totalResponseTime / messageCount;
-      });
-      
-      next();
-    });
+    // Emit event qua socket
+    if (action.type === 'socket/emit' && socket) {
+      const { event, data } = action.payload;
+      socket.emit(event, data);
+    }
     
-    // Track errors
-    socket.on("error", () => {
-      errorCount++;
-      metrics.errorRate = errorCount / messageCount;
-    });
-    
-    // When socket disconnects
-    socket.on("disconnect", () => {
-      connectionCounter();
-    });
-  });
-  
-  // Update messages per second every second
-  setInterval(() => {
-    // Calculate messages per second
-    metrics.messagesPerSecond = messageCount;
-    messageCount = 0;
-    
-    // Calculate active rooms
-    metrics.activeRooms = io.sockets.adapter.rooms.size;
-    
-    // Store metrics in Redis
-    redisClient.set("socket:metrics", JSON.stringify(metrics));
-  }, 1000);
-  
-  // API endpoint to get metrics
-  return {
-    getMetrics: async (): Promise<SocketMetrics> => {
-      const getAsync = promisify(redisClient.get).bind(redisClient);
-      const metricsStr = await getAsync("socket:metrics");
-      return metricsStr ? JSON.parse(metricsStr) : metrics;
-    },
+    return next(action);
   };
 };
 ```
+
+### 8.2. Video Queue Slice
+
+```typescript
+// Frontend/redux/features/videoQueue/videoQueueSlice.ts
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { VideoQueueItem } from '@/app/contexts/VideoQueueContext';
+
+interface VideoQueueState {
+  queue: VideoQueueItem[];
+}
+
+const initialState: VideoQueueState = {
+  queue: []
+};
+
+const videoQueueSlice = createSlice({
+  name: 'videoQueue',
+  initialState,
+  reducers: {
+    // Thêm video vào queue
+    addToQueue: (state, action: PayloadAction<Omit<VideoQueueItem, 'progress' | 'message' | 'status' | 'timestamp'>>) => {
+      state.queue.push({
+        ...action.payload,
+        progress: 0,
+        message: 'Waiting to process...',
+        status: 'pending',
+        timestamp: Date.now()
+      });
+    },
+    
+    // Cập nhật tiến trình video
+    updateProgress: (state, action: PayloadAction<{
+      processId: string;
+      progress: number;
+      message: string;
+      status: string;
+      result?: any;
+    }>) => {
+      const { processId, progress, message, status, result } = action.payload;
+      const index = state.queue.findIndex(item => item.processId === processId);
+      
+      if (index !== -1) {
+        state.queue[index] = {
+          ...state.queue[index],
+          progress,
+          message,
+          status,
+          result,
+          timestamp: Date.now()
+        };
+      }
+    },
+    
+    // Xóa video khỏi queue
+    removeFromQueue: (state, action: PayloadAction<string>) => {
+      state.queue = state.queue.filter(item => item.processId !== action.payload);
+    },
+    
+    // Xóa toàn bộ queue
+    clearQueue: (state) => {
+      state.queue = [];
+    }
+  }
+});
+
+export const {
+  addToQueue,
+  updateProgress,
+  removeFromQueue,
+  clearQueue
+} = videoQueueSlice.actions;
+
+export default videoQueueSlice.reducer;
+```
+
+## 9. Tài Liệu Tham Khảo
+
+1. [Socket.IO Official Documentation](https://socket.io/docs/v4)
+2. [Redis Adapter for Socket.IO](https://socket.io/docs/v4/redis-adapter)
+3. [Bull Queue Documentation](https://github.com/OptimalBits/bull/blob/master/REFERENCE.md)
+4. [React Context API Documentation](https://reactjs.org/docs/context.html)
+5. [Redux Toolkit Documentation](https://redux-toolkit.js.org)

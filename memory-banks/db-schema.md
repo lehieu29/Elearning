@@ -201,33 +201,105 @@ interface ILayout extends Document {
   - **subTitle**: Tiêu đề phụ banner
 - **timestamps**: Tự động thêm createdAt và updatedAt
 
-## 6. Subtitle Model
+## 6. AI Model
 
-Schema quản lý phụ đề cho video khóa học.
+Lưu trữ dữ liệu và bản ghi phân tích từ các video khóa học.
 
 ```typescript
-interface ISubtitle extends Document {
-  courseId: string;
-  fileName: string;
-  transcript: string;
+interface IAIModel extends Document {
+  title: string;
+  Course: string;
+  transcription: string;
 }
 ```
 
 ### Các trường chính:
-- **courseId**: ID của khóa học (required)
-- **fileName**: Tên file video (required)
-- **transcript**: Nội dung phụ đề/transcript (required)
-- **timestamps**: Tự động thêm createdAt và updatedAt
+- **title**: Tiêu đề phân tích/transcription (required)
+- **Course**: ID khóa học liên quan (required)
+- **transcription**: Nội dung phân tích/transcription (required)
 
-## 7. AI Model
+## 7. Subtitle Model
 
-Schema quản lý cấu hình và dữ liệu liên quan đến AI.
+Quản lý và lưu trữ metadata về phụ đề video.
 
 ```typescript
-interface IAI extends Document {
-  // Cấu trúc có thể thay đổi tùy theo implementation
+export interface Subtitle {
+  index: number;
+  start: number; // Thời gian bắt đầu (giây)
+  end: number;   // Thời gian kết thúc (giây)
+  text: string;  // Nội dung phụ đề
+}
+
+export interface SubtitleStyle {
+  // Font và text
+  font: string;
+  fontSize: number;
+  primaryColor: string;  // Màu chữ chính
+  outlineColor: string;  // Màu viền
+  outlineWidth: number;  // Độ rộng viền
+  bold: boolean;         // In đậm
+  italic: boolean;       // In nghiêng
+
+  // Vị trí
+  position: 'top' | 'bottom' | 'middle';  // Vị trí dọc
+  alignment: 'left' | 'center' | 'right'; // Căn chỉnh ngang
+  marginV: number;       // Lề dọc (pixel)
+  marginH: number;       // Lề ngang (pixel)
+
+  // Hiệu ứng nâng cao
+  backgroundEnabled: boolean;    // Có hiển thị nền không
+  backgroundColor: string;       // Màu nền
+  backgroundOpacity: number;     // Độ trong suốt nền (0-1)
+  textOpacity: number;           // Độ trong suốt chữ (0-1)
+  shadowEnabled: boolean;        // Có hiệu ứng bóng đổ không
+  shadowColor: string;           // Màu bóng đổ
+  shadowDepth: number;           // Độ sâu bóng đổ
 }
 ```
+
+### Các style presets cho phụ đề:
+- **default**: Kiểu cơ bản (font Arial 24px, viền đen, màu trắng)
+- **lecture**: Cho bài giảng (font Arial 28px, nền đen mờ, viết đậm)
+- **tutorial**: Hướng dẫn (font Arial 22px, phía trên bên trái) 
+- **documentary**: Tài liệu (Verdana 26px, nền trong suốt, bóng đổ)
+- **minimal**: Tối giản (Helvetica 20px, viền mỏng)
+- **highContrast**: Tương phản cao (Arial 28px đậm, màu vàng, viền đậm)
+
+## 8. VideoProcessing Schema (Client-side)
+
+Quản lý trạng thái xử lý video trong hàng đợi (VideoQueue).
+
+```typescript
+interface VideoQueueItem {
+  processId: string;
+  fileName: string;
+  progress: number;
+  message: string;
+  status: "pending" | "processing" | "success" | "error";
+  result?: {
+    publicId?: string;
+    url?: string;
+    duration?: number;
+    format?: string;
+    error?: string;
+    warning?: string;
+  };
+  uploadType: "demo" | "content";
+  contentIndex?: number; // Chỉ dùng cho content videos
+  timestamp: number;
+}
+```
+
+### Các trường chính:
+- **processId**: ID duy nhất cho quá trình xử lý
+- **fileName**: Tên file gốc
+- **progress**: Tiến độ xử lý (0-100%)
+- **message**: Thông báo trạng thái hiện tại
+- **status**: Trạng thái xử lý
+- **result**: Kết quả sau khi xử lý thành công
+- **uploadType**: Loại video (demo hoặc content)
+- **contentIndex**: Chỉ số nội dung nếu là video content
+- **timestamp**: Thời gian thêm vào queue
 
 ## Quan hệ giữa các Model
 
@@ -251,7 +323,11 @@ interface IAI extends Document {
    - Một User có thể có nhiều Notification
    - Notification tham chiếu đến User qua trường `userId`
 
-5. **Course - Subtitle**:
+5. **Course - AIModel**:
    - Mối quan hệ một-nhiều (One-to-Many)
-   - Một Course có thể có nhiều Subtitle
-   - Subtitle tham chiếu đến Course qua trường `courseId`
+   - Một Course có thể có nhiều bản AI transcription
+   - AIModel tham chiếu đến Course qua trường `Course`
+
+6. **VideoQueueItem - Course**:
+   - Không lưu trữ trong database, chỉ quản lý ở client-side thông qua Context API
+   - Kết nối với Course thông qua publicId sau khi xử lý thành công

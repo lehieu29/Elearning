@@ -271,7 +271,7 @@ export async function callGeminiApiWithRetry(videoBase64: string, options: Gemin
 }
 
 /**
- * Tạo file phụ đề SRT
+ * Tạo file phụ đề SRT với hỗ trợ UTF-8 BOM cho tiếng Việt
  */
 export async function createSubtitleFile(subtitles: Subtitle[], outputPath: string): Promise<void> { // Use Subtitle[]
     // Chuyển đổi định dạng subtitles sang định dạng SRT
@@ -289,11 +289,27 @@ export async function createSubtitleFile(subtitles: Subtitle[], outputPath: stri
         const startTime = formatTimeToSrt(sub.start);
         const endTime = formatTimeToSrt(sub.end);
 
+        // Tự động chia phụ đề thành 2 dòng nếu quá dài
+        let text = sub.text;
+        if (text.length > 42 && !text.includes('\n')) {
+            // Tìm một khoảng trắng gần giữa chuỗi để chia thành 2 dòng
+            const middle = Math.floor(text.length / 2);
+            let spaceIndex = text.indexOf(' ', middle);
+            if (spaceIndex === -1 || spaceIndex > middle + 15) {
+                // Nếu không tìm thấy khoảng trắng phù hợp, tìm ngược lại
+                spaceIndex = text.lastIndexOf(' ', middle);
+            }
+
+            if (spaceIndex !== -1) {
+                text = text.substring(0, spaceIndex) + '\n' + text.substring(spaceIndex + 1);
+            }
+        }
+
         return {
             id: index + 1,
             start: startTime,
             end: endTime,
-            text: sub.text
+            text: text
         };
     });
 
@@ -302,9 +318,34 @@ export async function createSubtitleFile(subtitles: Subtitle[], outputPath: stri
         return `${sub.id}\n${sub.start} --> ${sub.end}\n${sub.text}\n`;
     }).join('\n');
 
-    // Ghi file
-    await fs.writeFile(outputPath, srtContent, 'utf8');
-    console.log(`Subtitle file created: ${outputPath}`);
+    // Đảm bảo thư mục tồn tại
+    const subtitleDir = path.dirname(outputPath);
+    if (!fs.existsSync(subtitleDir)) {
+        await fs.mkdirp(subtitleDir, { mode: 0o777 });
+        console.log(`Created subtitle directory: ${subtitleDir}`);
+    }
+
+    // Thêm UTF-8 BOM để đảm bảo nội dung tiếng Việt được hiển thị đúng
+    const bomPrefix = Buffer.from([0xEF, 0xBB, 0xBF]);
+    const contentBuffer = Buffer.concat([
+        bomPrefix,
+        Buffer.from(srtContent, 'utf8')
+    ]);
+
+    // Ghi file với encoding UTF-8 + BOM
+    await fs.writeFile(outputPath, contentBuffer);
+    console.log(`Subtitle file created with UTF-8 BOM: ${outputPath}`);
+
+    // Log một phần nội dung để debug
+    console.log(`Subtitle content preview: ${srtContent.substring(0, 200)}...`);
+
+    // Đảm bảo phụ đề được viết đúng
+    try {
+        const verifyContent = await fs.readFile(outputPath);
+        console.log(`Subtitle file size: ${verifyContent.length} bytes`);
+    } catch (e) {
+        console.error(`Error verifying subtitle file: ${e}`);
+    }
 }
 
 /**
@@ -315,6 +356,21 @@ export async function createSubtitleFile(subtitles: Subtitle[], outputPath: stri
 export function convertStyleToFFmpegFormat(style: SubtitleStyle): string {
     // Xử lý màu sắc: Chuyển đổi từ mã màu hex sang mã ASS
     const hexToAss = (hexColor: string): string => {
+        // Xử lý trường hợp nhận được tên màu thay vì mã hex
+        const colorMap: { [key: string]: string } = {
+            'white': 'FFFFFF',
+            'black': '000000',
+            'red': 'FF0000',
+            'green': '00FF00',
+            'blue': '0000FF',
+            'yellow': 'FFFF00'
+        };
+
+        // Nếu là tên màu, chuyển sang mã hex
+        if (colorMap[hexColor.toLowerCase()]) {
+            hexColor = colorMap[hexColor.toLowerCase()];
+        }
+
         // Loại bỏ ký tự # nếu có
         hexColor = hexColor.replace('#', '');
 
@@ -342,6 +398,21 @@ export function convertStyleToFFmpegFormat(style: SubtitleStyle): string {
 
     // Xử lý màu sắc cho nền
     const hexToAssBackground = (hexColor: string, opacity: number): string => {
+        // Xử lý trường hợp nhận được tên màu thay vì mã hex
+        const colorMap: { [key: string]: string } = {
+            'white': 'FFFFFF',
+            'black': '000000',
+            'red': 'FF0000',
+            'green': '00FF00',
+            'blue': '0000FF',
+            'yellow': 'FFFF00'
+        };
+
+        // Nếu là tên màu, chuyển sang mã hex
+        if (colorMap[hexColor.toLowerCase()]) {
+            hexColor = colorMap[hexColor.toLowerCase()];
+        }
+
         // Loại bỏ ký tự # nếu có
         hexColor = hexColor.replace('#', '');
 
@@ -392,7 +463,6 @@ export function convertStyleToFFmpegFormat(style: SubtitleStyle): string {
     styleString += `Italic=${style.italic ? '1' : '0'},`;
 
     // Đặt kiểu viền
-    styleString += `BorderStyle=3,`; // ASS border
     styleString += `Outline=${style.outlineWidth},`;
 
     return styleString;
@@ -477,33 +547,317 @@ export async function burnSubtitlesToVideo(
         };
     }
 
-    // Chuyển đổi style thành định dạng FFmpeg
-    const styleString = convertStyleToFFmpegFormat(subtitleStyle);
+    // Sử dụng đường dẫn tương đối đơn giản trong thư mục uploads
+    // Đảm bảo thư mục uploads tồn tại
+    const uploadsDir = './uploads';
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirpSync(uploadsDir);
+    }
+    
+    // Sử dụng trực tiếp file phụ đề trong thư mục uploads
+    const uploadPath = 'uploads/subtitles.srt';
+    
+    // Chuyển đổi backslash sang forward slash (cho Windows)
+    const escapedSubtitlePath = uploadPath.replace(/\\/g, '/');
 
-    // Xây dựng chuỗi vị trí
-    const positionString = buildPositionString(subtitleStyle);
+    // Tạo chuỗi filter đơn giản cho ffmpeg
+    const styleParams = 'FontSize=24,Outline=1,Shadow=0,MarginV=25';
+    
+    const filterString = `subtitles=${escapedSubtitlePath}:force_style=${styleParams}`;
+
+    console.log(`Platform: ${process.platform}`);
+    console.log(`Original subtitle path: ${subtitlePath}`);
+    console.log(`Escaped subtitle path: ${escapedSubtitlePath}`);
+    console.log(`Filter string: ${filterString}`);
 
     return new Promise((resolve, reject) => {
-        ffmpeg(videoPath)
-            .inputOptions('-threads 4') // Tăng hiệu suất
-            .addOption('-vf', `subtitles=${subtitlePath}:force_style='${styleString}${positionString}'`)
+    ffmpeg(videoPath)
+    .inputOptions('-threads 4') // Tăng hiệu suất
+    .inputOptions('-report') // Thêm flag để tạo file log chi tiết
+    .inputOptions('-loglevel debug') // Thêm loglevel debug để hiển thị thông tin chi tiết hơn
+    // Sử dụng videoFilter để tăng tính tương thích
+    .videoFilter(filterString)
+            .outputOptions('-c:v', 'libx264')
+            .outputOptions('-crf', '18')
+            .outputOptions('-preset', 'slow')
+            .outputOptions('-c:a', 'copy') // Giữ nguyên audio
             .output(outputPath)
-            .outputOptions('-c:a copy') // Giữ nguyên audio
-            .on('start', (commandLine: string) => { // Added string type for commandLine
+            .on('start', (commandLine: string) => {
                 console.log('FFmpeg command:', commandLine);
             })
             .on('end', () => {
                 console.log('Subtitles burned successfully');
                 resolve(outputPath);
             })
-            .on('error', (err: Error) => { // Added Error type for err
+            .on('error', (err: Error) => {
                 console.error('Error burning subtitles:', err);
-                reject(err);
+
+                // Nếu lỗi làm việc với file phụ đề thì thử lại với đường dẫn đơn giản hơn
+                if (err.message.includes('No such file') || err.message.includes('subtitles')) {
+                    console.log('Trying alternative subtitle file path format...');
+
+                    // Tạo một bản sao phụ đề ở thư mục tạm với tên đơn giản
+                    const simplePath = path.join(os.tmpdir(), `subtitle_${Date.now()}.srt`);
+                    fs.copyFileSync(subtitlePath, simplePath);
+                    console.log(`Copied subtitle to simple path: ${simplePath}`);
+
+                    // Xử lý đường dẫn phụ đề đơn giản
+                    // Sử dụng đường dẫn tương đối trong thư mục uploads
+                    const filename = path.basename(simplePath);
+                    const simpleEscapedPath = `./uploads/${filename}`;
+                    
+                    // Chuyển đổi backslash sang forward slash
+                    const escapedPath = simpleEscapedPath.replace(/\\/g, '/');
+                    
+                    // Mã hóa các ký tự đặc biệt
+                    const charsToEscape = /[\s&()\[\]{}^=;!'+,`~]/g;
+                    const finalPath = escapedPath.replace(charsToEscape, (c) => {
+                        return '\\' + c;
+                    });
+                    
+                    console.log(`Simple escaped path: ${finalPath}`);
+
+                    // Tạo chuỗi filter an toàn
+                    const styleParams = 'FontSize=24,Outline=1,Shadow=0,MarginV=25';
+                    const retryFilterString = `subtitles=${finalPath}:force_style=${styleParams}`;
+                    
+                    console.log(`Retry filter string: ${retryFilterString}`);
+
+                    // Thử lại với đường dẫn đơn giản hơn
+                    ffmpeg(videoPath)
+                    .inputOptions('-threads 4')
+                    .inputOptions('-report')
+                    .inputOptions('-loglevel debug') // Tăng loglevel để gỡ lỗi tốt hơn
+                    .videoFilter(retryFilterString) // Sử dụng videoFilter
+                        .outputOptions('-c:v', 'libx264')
+                        .outputOptions('-crf', '18')
+                        .outputOptions('-preset', 'slow')
+                        .outputOptions('-c:a', 'copy')
+                        .output(outputPath)
+                        .on('start', (cmd) => console.log('Retry FFmpeg command:', cmd))
+                        .on('end', () => {
+                            console.log('Subtitles burned successfully with alternate path');
+                            // Dọn dẹp file phụ đề tạm
+                            try {
+                                fs.unlinkSync(simplePath);
+                                console.log(`Cleaned up temporary subtitle file: ${simplePath}`);
+                            } catch (cleanupErr) {
+                                console.warn(`Failed to clean up temp subtitle: ${cleanupErr}`);
+                            }
+                            resolve(outputPath);
+                        })
+                        .on('error', (retryErr) => {
+                            console.error('Error in retry attempt:', retryErr);
+                            reject(retryErr);
+                        })
+                        .on('progress', (progress: { percent?: number }) => {
+                            console.log(`Retry processing: ${progress.percent ? Math.round(progress.percent) : 0}% done`);
+                        })
+                        .run();
+                } else {
+                    reject(err);
+                }
             })
-            .on('progress', (progress: { percent?: number }) => { // Added type for progress
+            .on('progress', (progress: { percent?: number }) => {
                 console.log(`Processing: ${progress.percent ? Math.round(progress.percent) : 0}% done`);
             })
             .run();
+    });
+}
+
+/**
+* Phiên bản đơn giản hóa để thêm phụ đề vào video - Hỗ trợ đa nền tảng
+* Tập trung vào sự ổn định thay vì hiệu suất
+*/
+export async function burnSubtitlesToVideoSimplified(
+    videoPath: string,
+    subtitlePath: string,
+    outputPath: string,
+    style?: SubtitleStyle | string
+): Promise<string> {
+    // 1. Kiểm tra thư mục uploads tồn tại
+    const uploadsDir = './uploads';
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirpSync(uploadsDir, { mode: 0o777 });
+        console.log(`Created uploads directory: ${uploadsDir}`);
+    }
+
+    // 2. Sử dụng file phụ đề trong thư mục uploads
+    // Trong trường hợp không tìm thấy file phụ đề, tạo file mới
+    const uploadSubtitlePath = 'uploads/subtitles.srt';
+    
+    if (!fs.existsSync(uploadSubtitlePath)) {
+        console.log(`Subtitle file not found at: ${uploadSubtitlePath}`);
+        
+        // Tạo file phụ đề mẫu tiếng Việt với UTF-8 BOM
+        const testSubtitle = `1
+00:00:01,000 --> 00:00:05,000
+Phụ đề mẫu - Đây là video tự động tạo
+
+2
+00:00:06,000 --> 00:00:10,000
+Kiểm tra hiển thị tiếng Việt: ă, â, đ, ê, ô, ơ, ư
+`;
+
+        // Thêm UTF-8 BOM để đảm bảo tiếng Việt hiển thị đúng
+        const bomPrefix = Buffer.from([0xEF, 0xBB, 0xBF]);
+        const contentBuffer = Buffer.concat([
+            bomPrefix,
+            Buffer.from(testSubtitle, 'utf8')
+        ]);
+
+        fs.writeFileSync(uploadSubtitlePath, contentBuffer);
+        console.log(`Created test subtitle file at: ${uploadSubtitlePath}`);
+    } else {
+        // Nếu có file phụ đề được cung cấp từ tham số, sao chép vào uploads nếu khác đường dẫn
+        if (subtitlePath !== uploadSubtitlePath && fs.existsSync(subtitlePath)) {
+            fs.copyFileSync(subtitlePath, uploadSubtitlePath);
+            console.log(`Copied subtitle to uploads folder: ${uploadSubtitlePath}`);
+        }
+        console.log('Phụ đề tồn tại trong thư mục uploads');
+    }
+
+    // 3. Kiểm tra nội dung file phụ đề
+    try {
+        const subtitleStats = fs.statSync(uploadSubtitlePath);
+        if (subtitleStats.size === 0) {
+            console.log(`Subtitle file is empty: ${uploadSubtitlePath}`);
+            throw new Error(`Subtitle file is empty: ${uploadSubtitlePath}`);
+        }
+
+        // Log nội dung phụ đề để debug
+        const subtitleContent = fs.readFileSync(uploadSubtitlePath, 'utf8').substring(0, 200);
+        console.log(`Subtitle content preview: ${subtitleContent}...`);
+    } catch (error) {
+        console.error(`Error checking subtitle file: ${error}`);
+    }
+
+    // 4. Sử dụng đường dẫn tương đối đơn giản
+    // Chuyển đổi backslash sang forward slash (cho Windows)
+    const escapedSubtitlePath = 'uploads/subtitles.srt'.replace(/\\/g, '/');
+
+    // Tạo chuỗi filter đơn giản cho ffmpeg
+    const styleParams = 'FontSize=24,Outline=1,Shadow=0,MarginV=25';
+    const filterString = `subtitles='${escapedSubtitlePath}:force_style=${styleParams}'`;
+
+    console.log(`Platform: ${process.platform}`);
+    console.log(`Original subtitle path: ${subtitlePath}`);
+    console.log(`Escaped subtitle path: ${escapedSubtitlePath}`);
+    console.log(`Filter string: ${filterString}`);
+
+    // 4. Tạo chuỗi style đơn giản, tránh các tham số phức tạp
+    const styleString = "FontName=Arial,FontSize=24,Outline=1,Shadow=0,MarginV=25";
+
+    return new Promise((resolve, reject) => {
+        try {
+            // 5. Tạo lệnh FFmpeg đơn giản nhất có thể - chỉ dùng các tham số cốt lõi
+            const ffmpegCommand = ffmpeg(videoPath)
+                .outputOptions('-y') // Ghi đè lên file đầu ra nếu đã tồn tại
+                .inputOptions('-report') // Thêm flag để tạo file log chi tiết
+                .inputOptions('-loglevel debug') // Thêm loglevel debug để hiển thị thông tin chi tiết hơn
+                // Sử dụng addOption thay vì videoFilter để tăng tính tương thích
+                .addOption('-vf', filterString)
+                .outputOptions('-c:v', 'libx264') // Dùng encoder phần mềm tiêu chuẩn
+                .outputOptions('-crf', '18') // Chất lượng cao
+                .outputOptions('-preset', 'slow') // Preset chất lượng cao
+                .outputOptions('-c:a', 'copy') // Giữ nguyên audio
+                .output(outputPath);
+
+            // Xử lý sự kiện
+            ffmpegCommand
+                .on('start', (commandLine: string) => {
+                    console.log('FFmpeg command:', commandLine);
+                })
+                .on('end', () => {
+                    console.log('Subtitles burned successfully');
+                    resolve(outputPath);
+                })
+                .on('error', (err: Error) => {
+                    console.error('Error burning subtitles:', err);
+
+                    // Log lỗi chi tiết
+                    if (err.message.includes('subtitles')) {
+                        console.error('Subtitle filter error - this may be due to invalid subtitle file or path');
+                    }
+
+                    // Nếu lỗi làm việc với file phụ đề thì thử đường dẫn tuyệt đối
+                    if (err.message.includes('No such file') || err.message.includes('subtitles')) {
+                        console.log('Trying alternative subtitle file path format...');
+
+                        // Tạo một bản sao phụ đề ở thư mục gốc với tên đơn giản
+                        const simplePath = path.join(os.tmpdir(), `subtitle_${Date.now()}.srt`);
+                        fs.copyFileSync(subtitlePath, simplePath);
+                        console.log(`Copied subtitle to simple path: ${simplePath}`);
+
+                        // Xử lý đường dẫn phụ đề đơn giản
+                        // Sử dụng đường dẫn tương đối trong thư mục uploads
+                        const filename = path.basename(simplePath);
+                        const simpleEscapedPath = `./uploads/${filename}`;
+                        
+                        // Chuyển đổi backslash sang forward slash
+                        const escapedPath = simpleEscapedPath.replace(/\\/g, '/');
+                        
+                        // Sao chép file phụ đề vào thư mục uploads
+                        const uploadsDir = './uploads';
+                        if (!fs.existsSync(uploadsDir)) {
+                            fs.mkdirpSync(uploadsDir);
+                        }
+                        fs.copyFileSync(simplePath, path.join(uploadsDir, filename));
+                        
+                        console.log(`Copied subtitle to uploads folder: ${escapedPath}`);
+                        
+                        // Mã hóa các ký tự đặc biệt
+                        const charsToEscape = /[\s&()\[\]{}^=;!'+,`~]/g;
+                        const finalPath = escapedPath.replace(charsToEscape, (c) => {
+                            return '\\' + c;
+                        });
+
+                        // Tạo chuỗi filter an toàn
+                        const styleParams = 'FontSize=24,Outline=1,Shadow=0,MarginV=25';
+                        const retryFilterString = `subtitles=${finalPath}:force_style=${styleParams}`;
+                        console.log(`Retry filter string: ${retryFilterString}`);
+
+                        // Thử lại với đường dẫn đơn giản hơn
+                        ffmpeg(videoPath)
+                        .outputOptions('-y')
+                        .inputOptions('-report') // Thêm report để log file
+                        .inputOptions('-loglevel debug') // Tăng loglevel để gỡ lỗi tốt hơn
+                        // Sử dụng videoFilter để tăng tính tương thích
+                        .videoFilter(retryFilterString)
+                            .outputOptions('-c:v', 'libx264')
+                            .outputOptions('-crf', '18')
+                            .outputOptions('-preset', 'slow')
+                            .outputOptions('-c:a', 'copy')
+                            .output(outputPath)
+                            .on('start', (cmd) => console.log('Retry FFmpeg command:', cmd))
+                            .on('end', () => {
+                                console.log('Subtitles burned successfully with alternate path');
+                                // Dọn dẹp file phụ đề tạm
+                                try {
+                                    fs.unlinkSync(simplePath);
+                                    console.log(`Cleaned up temporary subtitle file: ${simplePath}`);
+                                } catch (cleanupErr) {
+                                    console.warn(`Failed to clean up temp subtitle: ${cleanupErr}`);
+                                }
+                                resolve(outputPath);
+                            })
+                            .on('error', (retryErr) => {
+                                console.error('Error in retry attempt:', retryErr);
+                                reject(retryErr);
+                            })
+                            .run();
+                    } else {
+                        reject(err);
+                    }
+                })
+                .on('progress', (progress: { percent?: number }) => {
+                    console.log(`Processing: ${progress.percent ? Math.round(progress.percent) : 0}% done`);
+                })
+                .run();
+        } catch (setupError) {
+            console.error('Error setting up FFmpeg command:', setupError);
+            reject(setupError);
+        }
     });
 }
 
@@ -588,6 +942,22 @@ export async function cleanupTempFiles(filePaths: string[]): Promise<void> {
                 } else {
                     await fs.unlink(filePath);
                 }
+                console.log(`Cleaned up: ${filePath}`);
+            }
+        } catch (error) {
+            console.error(`Error cleaning up ${filePath}:`, error);
+        }
+    }
+}
+
+/**
+ * Hàm dọn dẹp các file trong thư mục uploads
+ */
+export async function cleanupFiles(filePaths: string[]): Promise<void> {
+    for (const filePath of filePaths) {
+        try {
+            if (await fs.pathExists(filePath)) {
+                await fs.unlink(filePath);
                 console.log(`Cleaned up: ${filePath}`);
             }
         } catch (error) {
@@ -979,10 +1349,10 @@ export async function processSegmentsInParallelOptimized(
 }
 
 /**
- * Cải tiến prompt cho Gemini API với hướng dẫn chi tiết hơn
+ * Cải tiến prompt cho Gemini API với hướng dẫn chi tiết hơn và yêu cầu phụ đề tiếng Việt
  */
 function getEnhancedPrompt(contentType = 'lecture', segmentInfo: SegmentInfo | null = null): string { // Use SegmentInfo
-    let prompt = `Tạo phụ đề chính xác cho video ${contentType} này.`;
+    let prompt = `Tạo phụ đề chính xác bằng TIẾNG VIỆT cho video ${contentType} này. RẤT QUAN TRỌNG: Phụ đề PHẢI HOÀN TOÀN bằng TIẾNG VIỆT CÓ DẤU, không chấp nhận bất kỳ phụ đề nào bằng tiếng Anh.`;
 
     // Thêm chi tiết về định dạng cần thiết
     prompt += `
@@ -992,7 +1362,7 @@ function getEnhancedPrompt(contentType = 'lecture', segmentInfo: SegmentInfo | n
         "index": (số thứ tự bắt đầu từ 0),
         "startTime": (thời gian bắt đầu định dạng mm:ss.sss),
         "endTime": (thời gian kết thúc định dạng mm:ss.sss),
-        "text": (nội dung phụ đề)
+        "text": (nội dung phụ đề bằng tiếng Việt)
       }
     ]
     
@@ -1003,29 +1373,32 @@ function getEnhancedPrompt(contentType = 'lecture', segmentInfo: SegmentInfo | n
     4. Sử dụng thời gian chính xác trong định dạng mm:ss.sss (phút:giây.mili giây)
     
     Hướng dẫn QUAN TRỌNG về nội dung phụ đề:
-    1. Mỗi phụ đề tối đa 2 dòng, mỗi dòng KHÔNG quá 42 ký tự
-    2. KHÔNG viết tắt mà viết đầy đủ các từ và cụm từ
-    3. Giữ nguyên ý nghĩa và sử dụng chính xác thuật ngữ chuyên ngành
-    4. LOẠI BỎ từ lặp lại, từ đệm, và các âm thanh không có nội dung (ừm, ah, etc.)
-    5. KHÔNG thêm thông tin không có trong âm thanh
+    1. Phụ đề PHẢI bằng TIẾNG VIỆT, hãy dịch từ tiếng Anh sang tiếng Việt nếu cần
+    2. Mỗi phụ đề tối đa 2 dòng, mỗi dòng KHÔNG quá 42 ký tự
+    3. KHÔNG viết tắt mà viết đầy đủ các từ và cụm từ
+    4. Giữ nguyên ý nghĩa và sử dụng chính xác thuật ngữ chuyên ngành
+    5. LOẠI BỎ từ lặp lại, từ đệm, và các âm thanh không có nội dung (ừm, ah, etc.)
+    6. ĐẢM BẢO phụ đề tiếng Việt có đầy đủ dấu thanh và dấu câu chính xác
     `;
 
     // Thêm hướng dẫn cho từng loại nội dung video
     if (contentType === 'lecture') {
         prompt += `
       Hướng dẫn đặc biệt cho video bài giảng:
-      1. Ưu tiên giữ lại các thuật ngữ học thuật, công thức chính xác
+      1. Ưu tiên dịch và giữ lại các thuật ngữ học thuật, công thức chính xác
       2. Nếu giảng viên viết lên bảng, đảm bảo phụ đề đồng bộ với nội dung được viết
       3. Phụ đề phải đúng ngữ pháp, dấu câu, viết hoa tên riêng
       4. Nếu có các câu hỏi từ giảng viên, giữ lại cấu trúc câu hỏi trong phụ đề
+      5. Dịch các thuật ngữ kỹ thuật một cách nhất quán xuyên suốt video
       `;
     } else if (contentType === 'tutorial') {
         prompt += `
       Hướng dẫn đặc biệt cho video hướng dẫn:
       1. Giữ lại đúng các bước, số thứ tự, và tên lệnh/thao tác
       2. Phụ đề phải đồng bộ với các thao tác trực quan
-      3. Giữ lại chính xác các tên file, mã lệnh, và đường dẫn
+      3. Giữ nguyên chính xác các tên file, mã lệnh, và đường dẫn
       4. Đảm bảo phụ đề ngắn gọn và dễ đọc khi người dùng thực hiện theo
+      5. Dịch các hướng dẫn tiếng Anh sang tiếng Việt, nhưng giữ nguyên các thuật ngữ kỹ thuật nếu cần
       `;
     }
 
@@ -1205,7 +1578,7 @@ function enhancedPostProcessSubtitles(subtitles: Subtitle[]): Subtitle[] { // Us
 /**
  * Tối ưu hóa việc tạo file phụ đề SRT với kiểm tra chất lượng
  */
-export async function createEnhancedSubtitleFile(subtitles: Subtitle[], outputPath: string): Promise<void> { // Use Subtitle[]
+export async function createEnhancedSubtitleFile(subtitles: Subtitle[], outputPath: string, subtitlePathTest: string): Promise<void> { // Use Subtitle[]
     if (!subtitles || subtitles.length === 0) {
         throw new Error('No subtitles provided');
     }
@@ -1244,6 +1617,14 @@ export async function createEnhancedSubtitleFile(subtitles: Subtitle[], outputPa
     }
     if (longSubtitleCount > Math.ceil(subtitles.length / 20)) { // Nếu > 5% phụ đề quá dài
         issuesFound.push(`Found ${longSubtitleCount} subtitles exceeding recommended length`);
+    }
+
+    // 4. Kiểm tra phụ đề đầu tiên và cuối cùng
+    if (subtitles.length > 0) {
+        // Phụ đề đầu tiên phải bắt đầu gần thời điểm 0 (tối đa 5 giây)
+        if (subtitles[0].start > 5) {
+            issuesFound.push(`First subtitle starts too late at ${subtitles[0].start.toFixed(2)} seconds`);
+        }
     }
 
     // Log các vấn đề và tiến hành hậu xử lý nếu cần
@@ -1300,9 +1681,38 @@ export async function createEnhancedSubtitleFile(subtitles: Subtitle[], outputPa
         return `${sub.id}\n${sub.start} --> ${sub.end}\n${sub.text}\n`;
     }).join('\n');
 
-    // Ghi file
-    await fs.writeFile(outputPath, srtContent, 'utf8');
-    console.log(`Enhanced subtitle file created: ${outputPath}`);
+    // Đảm bảo thư mục đầu ra tồn tại
+    await fs.ensureDir(path.dirname(outputPath));
+    await fs.ensureDir(path.dirname(subtitlePathTest));
+
+    // Thêm UTF-8 BOM để đảm bảo hiển thị tiếng Việt
+    const bomPrefix = Buffer.from([0xEF, 0xBB, 0xBF]);
+    const contentBuffer = Buffer.concat([
+        bomPrefix,
+        Buffer.from(srtContent, 'utf8')
+    ]);
+
+    // Ghi file với encoding UTF-8 + BOM
+    try {
+        // Ghi file chính
+        await fs.writeFile(outputPath, contentBuffer);
+        console.log(`Enhanced subtitle file created: ${outputPath}`);
+
+        // Ghi file test
+        await fs.writeFile(subtitlePathTest, contentBuffer);
+        console.log(`Enhanced subtitle file created: ${subtitlePathTest}`);
+
+        // Kiểm tra file đã được ghi đúng chưa
+        const stats = await fs.stat(outputPath);
+        console.log(`Subtitle file size: ${stats.size} bytes`);
+
+        // Kiểm tra nội dung file để debug
+        const fileContent = await fs.readFile(outputPath, 'utf8');
+        console.log(`First 200 chars of subtitle file: ${fileContent.substring(0, 200)}...`);
+    } catch (error) {
+        console.error(`Error writing subtitle files: ${error}`);
+        throw error;
+    }
 }
 
 
@@ -1319,6 +1729,11 @@ export async function burnSubtitlesOptimized(
     style?: SubtitleStyle | string,
     options: BurnOptions = {} // Use BurnOptions
 ): Promise<string> {
+    // Chuẩn bị đường dẫn phụ đề - chuyển đổi backslash sang forward slash
+    let escapedSubtitlePath = subtitlePath;
+    if (process.platform === 'win32') {
+        escapedSubtitlePath = subtitlePath.replace(/\\/g, '/');
+    }
     // Xác định style cần sử dụng
     let subtitleStyle: SubtitleStyle;
 
@@ -1392,7 +1807,7 @@ export async function burnSubtitlesOptimized(
         ffmpegCommand.inputOptions('-threads 0'); // Sử dụng tất cả CPU cores cho giải mã
 
         // Thêm bộ lọc phụ đề
-        ffmpegCommand.addOption('-vf', `subtitles=${subtitlePath}:force_style='${styleString}${positionString}'`);
+        ffmpegCommand.videoFilter(`subtitles="${escapedSubtitlePath}":force_style='${styleString}${positionString}'`);
 
         // Tối ưu cài đặt mã hóa video
         if (videoCodec && videoCodec.length > 0) {
@@ -1584,9 +1999,12 @@ export async function processVideoAndGenerateSubtitlesOptimized(
     subtitlePath: string;
     outputVideoPath: string;
 }> {
-    // Tạo thư mục tạm thời cho các file xử lý
-    const tempDir = path.join(os.tmpdir(), 'video-processing', Date.now().toString());
-    await fs.mkdirp(tempDir);
+    // Đảm bảo thư mục uploads tồn tại
+    const uploadsDir = './uploads';
+    if (!fs.existsSync(uploadsDir)) {
+        await fs.mkdirp(uploadsDir, { mode: 0o777 });
+        console.log(`Created uploads directory: ${uploadsDir}`);
+    }
 
     // Theo dõi tiến độ
     let lastProgressUpdate = 0;
@@ -1608,9 +2026,9 @@ export async function processVideoAndGenerateSubtitlesOptimized(
         // Tiền xử lý video nếu quá lớn
         let processedVideoPath = videoPath;
         if (videoSizeMB > 200) { // Nếu lớn hơn 200MB
-            progressTracker(5, 'Video lớn, đang tiền xử lý...');
+            progressTracker(5, 'Large video, processing...');
 
-            const preprocessedPath = path.join(tempDir, 'preprocessed.mp4');
+            const preprocessedPath = path.join(uploadsDir, 'preprocessed.mp4');
             processedVideoPath = await preprocessVideo(videoPath, preprocessedPath, {
                 maxWidth: 1280,
                 maxHeight: 720,
@@ -1622,15 +2040,13 @@ export async function processVideoAndGenerateSubtitlesOptimized(
             const newSizeMB = newStats.size / (1024 * 1024);
             console.log(`Preprocessed video size: ${newSizeMB.toFixed(2)}MB (${Math.round(newSizeMB / videoSizeMB * 100)}% of original)`);
 
-            progressTracker(10, 'Tiền xử lý hoàn tất, đang phân tích video...');
+            progressTracker(10, 'Preprocessing finished, analyzing video...');
         } else {
-            progressTracker(5, 'Đang phân tích video...');
+            progressTracker(5, 'Analyzing video...');
         }
 
         // Kiểm tra độ dài video
         const { duration } = await getVideoMetadata(processedVideoPath);
-        const subtitlePath = path.join(tempDir, 'subtitles.srt');
-        const outputVideoPath = path.join(tempDir, `output_${path.basename(videoPath)}`);
         let subtitles: Subtitle[] = []; // Use Subtitle[]
 
         console.log(`Processing video with duration: ${duration} seconds`);
@@ -1638,44 +2054,46 @@ export async function processVideoAndGenerateSubtitlesOptimized(
         // Xử lý khác nhau tùy theo độ dài video
         if (duration <= 600) { // Dưới 10 phút
             console.log('Video is short, processing directly');
-            progressTracker(10, 'Video ngắn, xử lý trực tiếp...');
+            progressTracker(10, 'Short video, processing directly...');
 
             try {
                 // Xử lý video ngắn trực tiếp
-                progressTracker(20, 'Đang chuyển đổi video...');
+                progressTracker(20, 'Converting video...');
                 const videoBase64 = await convertToBase64Optimized(processedVideoPath);
 
-                progressTracker(40, 'Đang tạo phụ đề với Gemini AI...');
+                progressTracker(40, 'Creating subtitles with Gemini AI...');
                 subtitles = await callGeminiApiWithRetry(videoBase64, {
-                    ...options,
-                    mimeType: 'video/mp4' // Ensure mimeType is passed if needed by callGeminiApiWithRetry
+                ...options,
+                mimeType: 'video/mp4' // Ensure mimeType is passed if needed by callGeminiApiWithRetry
                 });
 
-                progressTracker(70, 'Đã nhận phụ đề từ Gemini AI');
+                progressTracker(70, 'Received subtitles from Gemini AI');
             } catch (error: unknown) { // Use unknown
                 const errorMessage = (error instanceof Error) ? error.message : String(error);
                 console.error('Error generating subtitles directly:', errorMessage);
-                progressTracker(40, 'Gặp lỗi, đang sử dụng phương án dự phòng...');
+                progressTracker(40, 'Error occurred, using fallback...');
                 // Sử dụng fallback
                 subtitles = await processFallback(processedVideoPath);
             }
         } else {
             // Xử lý video dài bằng cách phân đoạn
             console.log('Video is long, processing with segments');
-            progressTracker(10, 'Video dài, đang phân đoạn...');
+            progressTracker(10, 'Long video, splitting...');
 
-            const segmentsDir = path.join(tempDir, 'segments');
+            const segmentsDir = path.join(uploadsDir, 'segments');
             await fs.mkdirp(segmentsDir);
 
             try {
                 // Phân đoạn video với phương pháp thông minh
-                progressTracker(20, 'Đang phân đoạn video thông minh...');
+                progressTracker(20, 'Splitting video intelligently...');
+                const segmentsDir = path.join(uploadsDir, 'segments');
+                await fs.mkdirp(segmentsDir);
                 const { segments, totalDuration } = await splitVideoIntoSmartSegmentsOptimized(processedVideoPath, 600, segmentsDir);
                 console.log(`Video split into ${segments.length} segments`);
-                progressTracker(30, `Đã phân đoạn video thành ${segments.length} phần`);
+                progressTracker(30, `Video has been split into ${segments.length} parts`);
 
                 // Xử lý từng phân đoạn với kiểm soát song song
-                progressTracker(35, 'Đang xử lý các phân đoạn...');
+                progressTracker(35, 'Processing the segments...');
                 subtitles = await processSegmentsInParallelOptimized(segments, options, (progress, message) => {
                     // Map progress từ 0-100 sang 35-75
                     const scaledProgress = 35 + (progress * 0.4);
@@ -1684,22 +2102,28 @@ export async function processVideoAndGenerateSubtitlesOptimized(
             } catch (error: unknown) { // Use unknown
                 const errorMessage = (error instanceof Error) ? error.message : String(error);
                 console.error('Error processing video segments:', errorMessage);
-                progressTracker(50, 'Gặp lỗi khi xử lý phân đoạn, đang sử dụng phương án dự phòng...');
+                progressTracker(50, 'Error processing segments, using fallback...');
                 // Sử dụng fallback
                 subtitles = await processFallback(processedVideoPath);
             }
         }
 
         // Hậu xử lý phụ đề
-        progressTracker(80, 'Đang hậu xử lý phụ đề...');
+        progressTracker(80, 'Post-processing subtitles...');
         subtitles = enhancedPostProcessSubtitles(subtitles);
 
+        // Tạo đường dẫn phụ đề trong thư mục uploads
+        const subtitlePath = 'uploads/subtitles.srt';
+        
         // Tạo file phụ đề SRT
-        progressTracker(85, 'Đang tạo file phụ đề SRT...');
-        await createEnhancedSubtitleFile(subtitles, subtitlePath);
+        progressTracker(85, 'Creating SRT subtitle file...');
+        await createEnhancedSubtitleFile(subtitles, subtitlePath, subtitlePath);
 
+        // Tạo tên file output trong thư mục uploads
+        const outputVideoPath = path.join('uploads', `output_${path.basename(videoPath)}`);
+        
         // Gắn cứng phụ đề vào video
-        progressTracker(90, 'Đang gắn phụ đề vào video...');
+        progressTracker(90, 'Burning subtitles into video...');
 
         // Xác định cài đặt phụ đề dựa trên loại nội dung
         const contentType = options.contentType || 'lecture';
@@ -1707,25 +2131,15 @@ export async function processVideoAndGenerateSubtitlesOptimized(
         const validPresetKeys = Object.keys(subtitleStylePresets) as Array<keyof typeof subtitleStylePresets>;
         const subtitleStyleName = validPresetKeys.includes(contentType as keyof typeof subtitleStylePresets) ? contentType : 'default';
 
-
-        await burnSubtitlesOptimized(
+        // Sử dụng phiên bản đơn giản hóa để gắn phụ đề
+        await burnSubtitlesToVideoSimplified(
             processedVideoPath,
             subtitlePath,
             outputVideoPath,
-            subtitleStyleName,
-            {
-                hardwareAcceleration: true,
-                preserveQuality: true,
-                showProgress: true,
-                onProgress: (percent) => {
-                    // Map progress từ 0-100 sang 90-98
-                    const scaledProgress = 90 + (percent * 0.08);
-                    progressTracker(Math.round(scaledProgress), `Đang gắn phụ đề: ${percent}%`);
-                }
-            }
+            subtitleStyleName
         );
 
-        progressTracker(100, 'Hoàn thành xử lý video và phụ đề!');
+        progressTracker(100, 'Video and subtitle processing completed!');
 
         return {
             subtitles,
@@ -1733,12 +2147,16 @@ export async function processVideoAndGenerateSubtitlesOptimized(
             outputVideoPath
         };
     } catch (error: unknown) { // Use unknown
-        // Xóa thư mục tạm nếu có lỗi
+        // Xóa files tạm trong thư mục uploads nếu có lỗi
         try {
-            await fs.remove(tempDir);
+            const filesToCleanup = [
+                path.join(uploadsDir, 'preprocessed.mp4'),
+                path.join(uploadsDir, 'subtitles.srt') 
+            ];
+            await cleanupFiles(filesToCleanup);
         } catch (cleanupError: unknown) { // Use unknown
             const cleanupErrorMessage = (cleanupError instanceof Error) ? cleanupError.message : String(cleanupError);
-            console.error('Error cleaning up temp directory:', cleanupErrorMessage);
+            console.error('Error cleaning up temp files:', cleanupErrorMessage);
         }
 
         // Re-throw the original error

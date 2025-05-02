@@ -31,7 +31,7 @@ const CourseContent: FC<Props> = ({
   const [uploadVideo, { isLoading }] = useUploadVideoMutation();
   const [currentUploadIndex, setCurrentUploadIndex] = useState(-1);
   const [uploadedFileNames, setUploadedFileNames] = useState(Array(courseContentData.length).fill(""));
-  
+
   // Thêm videoQueue hook
   const { addToQueue, setVideoUrlFromQueue } = useVideoQueue();
 
@@ -58,65 +58,64 @@ const CourseContent: FC<Props> = ({
   };
 
   const handleVideoUpload = (file: File, index: number) => {
-  if (!file) return;
+    if (!file) return;
 
-  // Log information for debugging
-  console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+    // Log information for debugging
+    console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
 
-  // Check file size and format
-  if (file.size === 0) {
-  toast.error("File is empty, please select another file", { duration: 4000 });
-  return;
-  }
+    // Check file size and format
+    if (file.size === 0) {
+      toast.error("File is empty, please select another file", { duration: 4000 });
+      return;
+    }
 
-  if (!file.type.startsWith('video/')) {
-  toast.error("Please select a valid video file", { duration: 4000 });
-  return;
-  }
+    if (!file.type.startsWith('video/')) {
+      toast.error("Please select a valid video file", { duration: 4000 });
+      return;
+    }
 
-  // Update uploading status
-  setCurrentUploadIndex(index);
+    // Update uploading status
+    setCurrentUploadIndex(index);
 
-  // Update the file name for this index
-  const updatedFileNames = [...uploadedFileNames];
-  updatedFileNames[index] = file.name;
-  setUploadedFileNames(updatedFileNames);
+    // Update the file name for this index
+    const updatedFileNames = [...uploadedFileNames];
+    updatedFileNames[index] = file.name;
+    setUploadedFileNames(updatedFileNames);
 
-  // Show loading toast
-  const loadingToast = toast.loading("Starting upload...", { duration: 5000 });
+    // Show loading toast
+    const loadingToast = toast.loading("Starting upload...", { duration: 5000 });
 
-  uploadVideo(file)
-  .unwrap()
-  .then((result) => {
-  console.log('Upload started:', result);
-  toast.dismiss(loadingToast);
-  toast.success("Upload started! You can continue editing", { duration: 3000 });
-  
-  // Thêm video vào queue
-  addToQueue({
-    processId: result.processId,
+    uploadVideo(file)
+      .unwrap()
+      .then((result) => {
+        console.log('Upload started:', result);
+        toast.dismiss(loadingToast);
+        toast.success("Upload started! You can continue editing", { duration: 3000 });
+
+        // Thêm video vào queue
+        addToQueue({
+          processId: result.processId,
           fileName: file.name,
-    uploadType: "content",
-    contentIndex: index,
-  });
-  })
-  .catch((error) => {
-  console.error('Upload error:', error);
-  toast.dismiss(loadingToast);
+          uploadType: "content",
+          contentIndex: index,
+        });
+      })
+      .catch((error) => {
+        console.error('Upload error:', error);
+        toast.dismiss(loadingToast);
         toast.error(error.data?.message || "Unknown error when uploading video", { duration: 5000 });
 
-    // Reset the file name for this index
-    const updatedFileNames = [...uploadedFileNames];
-  updatedFileNames[index] = "";
-  setUploadedFileNames(updatedFileNames);
-  });
+        // Reset the file name for this index
+        const updatedFileNames = [...uploadedFileNames];
+        updatedFileNames[index] = "";
+        setUploadedFileNames(updatedFileNames);
+      });
   };
 
   const newContentHandler = (item: any) => {
     if (
       item.title === "" ||
-      item.description === "" ||
-      item.videoUrl === ""
+      item.description === ""
     ) {
       toast.error("Please fill all the fields first!");
     } else {
@@ -148,8 +147,7 @@ const CourseContent: FC<Props> = ({
   const addNewSection = () => {
     if (
       courseContentData[courseContentData.length - 1].title === "" ||
-      courseContentData[courseContentData.length - 1].description === "" ||
-      courseContentData[courseContentData.length - 1].videoUrl === ""
+      courseContentData[courseContentData.length - 1].description === ""
     ) {
       toast.error("Please fill all the fields first!");
     } else {
@@ -181,12 +179,14 @@ const CourseContent: FC<Props> = ({
     } else {
       // Cập nhật videoUrl cho tất cả các video đã upload
       const updatedData = [...courseContentData];
-      
+
       updatedData.forEach((item, index) => {
         const { publicId, duration } = setVideoUrlFromQueue("content", index);
         if (publicId && !item.videoUrl) {
+          // Log publicId
+          console.log("Public ID:", publicId);
           updatedData[index].videoUrl = publicId;
-          
+
           // Cập nhật videoLength nếu có duration
           if (duration) {
             const durationInMinutes = Math.ceil(duration / 60);
@@ -194,7 +194,20 @@ const CourseContent: FC<Props> = ({
           }
         }
       });
-      
+
+      let isValid = true;
+
+      updatedData.forEach((item) => {
+        if(!item.videoUrl) {
+          isValid = false;
+        }
+      });
+
+      if (!isValid) {
+        toast.error("Please wait for all videos to be uploaded!");
+        return;
+      }
+
       setCourseContentData(updatedData);
       toast.success("Course content saved");
       setActive(active + 1);
@@ -204,13 +217,6 @@ const CourseContent: FC<Props> = ({
 
   return (
     <div className="w-[80%] m-auto mt-24 p-3">
-      <a
-        href="http://3.145.11.146:8501/"
-        className="p-2 bg-blue-500 rounded-md"
-        target="_blank"
-      >
-        Add video to AI
-      </a>
       <form onSubmit={handleSubmit}>
         {courseContentData?.map((item: any, index: number) => {
           const showSectionInput =
@@ -230,8 +236,8 @@ const CourseContent: FC<Props> = ({
                       <input
                         type="text"
                         className={`text-[20px] ${item.videoSection === "Untitled Section"
-                            ? "w-[170px]"
-                            : "w-min"
+                          ? "w-[170px]"
+                          : "w-min"
                           } font-Poppins cursor-pointer dark:text-white text-black bg-transparent outline-none`}
                         value={item.videoSection}
                         onChange={(e) => {

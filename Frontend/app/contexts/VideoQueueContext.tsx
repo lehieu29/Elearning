@@ -46,7 +46,7 @@ export const VideoQueueProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Kết nối Socket.IO khi component mount
   useEffect(() => {
     // Kết nối đến Socket.IO server
-    const socketInstance = io(process.env.NEXT_PUBLIC_API_URL || "", {
+    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || "", {
       path: "/socket.io",
       transports: ["polling", "websocket"]
     });

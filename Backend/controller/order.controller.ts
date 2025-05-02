@@ -21,19 +21,7 @@ export const createOrder = CatchAsyncError(
     try {
       // get data from client
       const { courseId, payment_info } = req.body as IOrder;
-      //  stripe handling
-      /*if (payment_info) {
-        if ("id" in payment_info) {
-          const paymentIntentId = payment_info.id;
-          const paymentIntent = await stripe.paymentIntents.retrieve(
-            paymentIntentId
-          );
 
-          if (paymentIntent.status !== "succeeded") {
-            return next(new ErrorHandler("Payment not authorized!", 400));
-          }
-        }
-      }*/
       // get the user info who purchased the course
       const user = await userModel.findById(req.user?._id);
       // has he already purchased the course?
@@ -58,7 +46,7 @@ export const createOrder = CatchAsyncError(
         payment_info,
       };
       // send order confirmation mail to user
-      const mailData = {
+      /*const mailData = {
         order: {
           _id: course._id.toString().slice(0, 6),
           name: course.name,
@@ -88,7 +76,7 @@ export const createOrder = CatchAsyncError(
         }
       } catch (error: any) {
         return next(new ErrorHandler(error.message, 500));
-      }
+      }*/
       // add course to user
       user?.courses.push(course?._id);
       // save to the cache

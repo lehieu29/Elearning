@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useVideoQueue } from "../../../contexts/VideoQueueContext";
 import CourseInformation from "./CourseInformation";
 import CourseOptions from "./CourseOptions";
 import CourseData from "./CourseData";
@@ -15,19 +16,6 @@ const CreateCourse = (props: Props) => {
   const [createCourse, { isLoading, isSuccess, error }] =
     useCreateCourseMutation();
 
-  useEffect(() => {
-    if (isSuccess) {
-      toast.success("Course created successfully");
-      redirect("/admin/courses");
-    }
-    if (error) {
-      if ("data" in error) {
-        const errorMessage = error as any;
-        toast.error(errorMessage.data.message);
-      }
-    }
-  }, [isSuccess, error]);
-
   const [active, setActive] = useState(0);
   const [courseInfo, setCourseInfo] = useState({
     name: "",
@@ -36,7 +24,7 @@ const CreateCourse = (props: Props) => {
     estimatedPrice: "",
     tags: "",
     level: "",
-    categories:"",
+    categories: "",
     demoUrl: "",
     thumbnail: "",
   });
@@ -62,6 +50,55 @@ const CreateCourse = (props: Props) => {
 
   const [courseData, setCourseData] = useState({});
 
+  // Sử dụng hook VideoQueue để theo dõi trạng thái upload video
+  const { queue } = useVideoQueue();
+
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success("Course created successfully");
+      redirect("/admin/courses");
+    }
+    if (error) {
+      if ("data" in error) {
+        const errorMessage = error as any;
+        toast.error(errorMessage.data.message);
+      }
+    }
+  }, [isSuccess, error]);
+
+  // Theo dõi trạng thái video trong queue để cập nhật demoUrl
+  useEffect(() => {
+    // Chỉ xử lý khi có video trong queue
+    if (queue.length === 0) return;
+
+    // Tìm video demo mới nhất đã upload thành công
+    const successDemoVideos = queue.filter(
+      item => item.uploadType === "demo" && item.status === "success"
+    );
+
+    if (successDemoVideos.length === 0) {
+      console.log("No demo video found in queue");
+      return;
+    }
+
+    // Sắp xếp theo thời gian, lấy video mới nhất
+    const latestVideo = successDemoVideos.sort(
+      (a, b) => b.timestamp - a.timestamp
+    )[0];
+
+    // Nếu đã có publicId và courseInfo.demoUrl chưa được cập nhật
+    if (
+      latestVideo.result?.publicId &&
+      courseInfo.demoUrl !== latestVideo.result.publicId
+    ) {
+      setCourseInfo({
+        ...courseInfo,
+        demoUrl: latestVideo.result.publicId
+      });
+
+      console.log("Updated demoUrl from queue:", latestVideo.result.publicId);
+    }
+  }, [queue, courseInfo.demoUrl]);
 
   const handleSubmit = async () => {
     // Format benefits array
@@ -111,7 +148,7 @@ const CreateCourse = (props: Props) => {
     const data = courseData;
     if (!isLoading) {
       await createCourse(data);
-    // alert("create course")
+      // alert("create course")
     }
   }
 

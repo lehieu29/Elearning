@@ -5,7 +5,13 @@ import http from "http";
 let io: SocketIOServer;
 
 export const initSocketServer = (server: http.Server) => {
-  io = new SocketIOServer(server);
+  io = new SocketIOServer(server, {
+    cors: {
+      origin: process.env.ORIGIN?.split(",") || ["http://localhost:3000"],
+      credentials: true
+    },
+    transports: ["polling", "websocket"]
+  });
 
   io.on("connection", (socket) => {
     console.log("A user connected");

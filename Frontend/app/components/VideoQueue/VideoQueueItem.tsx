@@ -50,7 +50,7 @@ const VideoQueueItem: React.FC<Props> = ({ item }) => {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center">
           <FiFile className="mr-2 text-gray-400" size={16} />
-          <span className="font-medium text-sm" title={item.fileName}>
+          <span className="font-medium text-sm text-black dark:text-white" title={item.fileName}>
             {truncateFileName(item.fileName)}
           </span>
         </div>

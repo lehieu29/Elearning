@@ -70,6 +70,7 @@ const CourseInformation: FC<Props> = ({
 
     // Cập nhật demoUrl từ video đã upload (nếu có)
     const { publicId } = setVideoUrlFromQueue("demo");
+    console.log("Public ID from queue (DemoURL): ", publicId);
     if (publicId && !courseInfo.demoUrl) {
       setCourseInfo({ ...courseInfo, demoUrl: publicId });
     }

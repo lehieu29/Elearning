@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elearning-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: elearning-backend
+  template:
+    metadata:
+      labels:
+        app: elearning-backend
+    spec:
+      imagePullSecrets:
+        - name: gcr-secret
+      containers:
+      - name: backend
+        image: gcr.io/elearning-8c024/elearning-backend:v1
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        envFrom:
+        - configMapRef:
+            name: elearning-config
+        - secretRef:
+            name: elearning-secrets
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elearning-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: elearning-frontend
+  template:
+    metadata:
+      labels:
+        app: elearning-frontend
+    spec:
+      imagePullSecrets:
+        - name: gcr-secret
+      containers:
+      - name: frontend
+        image: gcr.io/elearning-8c024/elearning-frontend:v1
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        env:
+        - name: NEXT_PUBLIC_SERVER_URI
+          value: "https://api.studynow.space/api/v1"
+        - name: NEXT_PUBLIC_SOCKET_SERVER_URI
+          value: "wss://api.studynow.space"
+        - name: CLOUD_NAME
+          value: do7haig17
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 30

@@ -26,7 +26,7 @@ const VideoQueue: React.FC = () => {
       {/* Header */}
       <div className="p-3 border-b dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-t-lg">
         <div className="flex items-center">
-          <h3 className="text-sm font-semibold">Video Upload Queue</h3>
+          <h3 className="text-sm font-semibold text-black dark:text-white">Video Upload Queue</h3>
           <div className="flex ml-2 text-xs">
             {countByStatus.processing > 0 && (
               <span className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded-full mr-1">
@@ -65,7 +65,7 @@ const VideoQueue: React.FC = () => {
       {!isCollapsed && (
         <div className="p-2 overflow-y-auto">
           {queue.length === 0 ? (
-            <p className="text-center text-gray-500 text-sm py-4">No videos in queue</p>
+            <p className="text-center text-gray-500 text-sm py-4 text-black dark:text-white">No videos in queue</p>
           ) : (
             queue.map((item) => (
               <VideoQueueItem key={item.processId} item={item} />

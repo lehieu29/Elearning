@@ -9,6 +9,7 @@ import { orderRouter } from "./routes/order.route";
 import { notificationRouter } from "./routes/notification.route";
 import { analyticsRouter } from "./routes/analytics.route";
 import { layoutRouter } from "./routes/layout.route";
+import healthRouter from "./routes/health.route";
 // import userRouter
 
 // create a server
@@ -19,12 +20,32 @@ app.use(express.json({ limit: "50mb" }));
 // cookie parse
 app.use(cookieParser());
 
-// cors =>
+// Debug để kiểm tra cấu hình CORS
+const allowedOrigins = process.env.ORIGIN?.split(",").map(origin => {
+  // Tự động thêm protocol http:// nếu chưa có
+  return origin.includes('://') ? origin : `http://${origin}`;
+}) || ["http://localhost:3000"];
+
+console.log("Allowed CORS Origins:", allowedOrigins);
+
+// cors với debug thêm để kiểm tra request origin
 app.use(
   cors({
-    // origin: process.env.ORIGIN,
-    origin:["http://localhost:3000"],
-    credentials:true
+    origin: function(origin, callback) {
+      // In ra origin của request để debug
+      console.log("Request Origin:", origin);
+      
+      // allow requests with no origin (like mobile apps, curl, postman)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) === -1) {
+        console.log(`Origin ${origin} not allowed by CORS`);
+        return callback(null, false);
+      }
+      
+      return callback(null, true);
+    },
+    credentials: true
   })
 );
 
@@ -36,7 +57,8 @@ app.use(
   orderRouter,
   notificationRouter,
   analyticsRouter,
-  layoutRouter
+  layoutRouter,
+  healthRouter
 );
 
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

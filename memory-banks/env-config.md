@@ -57,10 +57,6 @@ NEXT_PUBLIC_SOCKET_SERVER_URI=http://localhost:8000
 # Stripe Public Key
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
-# NextAuth Configuration
-NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=http://localhost:3000
-
 # Social Authentication
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
