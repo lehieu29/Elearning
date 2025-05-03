@@ -16,7 +16,7 @@ spec:
         - name: gcr-secret
       containers:
       - name: frontend
-        image: gcr.io/elearning-8c024/elearning-frontend:v1
+        image: gcr.io/elearning-8c024/elearning-frontend:v5
         ports:
         - containerPort: 3000
         resources:
@@ -28,7 +28,7 @@ spec:
             cpu: "500m"
         env:
         - name: NEXT_PUBLIC_SERVER_URI
-          value: "https://api.studynow.space/api/v1"
+          value: "https://api.studynow.space/api/v1/"
         - name: NEXT_PUBLIC_SOCKET_SERVER_URI
           value: "wss://api.studynow.space"
         - name: NEXT_PUBLIC_CLOUD_NAME

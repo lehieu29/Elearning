@@ -23,10 +23,9 @@ import {
 import { BiMessage, BiMessageRoundedDots } from "react-icons/bi";
 import { VscVerifiedFilled } from "react-icons/vsc";
 import Ratings from "@/app/utils/Ratings";
-import socketIO from "socket.io-client";
+import socketInstance from "@/app/utils/socketConfig";
 import Link from "next/link";
-const ENDPOINT = process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || "";
-const socketId = socketIO(ENDPOINT, { transports: ["websocket"] });
+const socketId = socketInstance;
 
 type Props = {
   data: any;

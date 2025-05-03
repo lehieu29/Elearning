@@ -8,9 +8,13 @@ export const initSocketServer = (server: http.Server) => {
   io = new SocketIOServer(server, {
     cors: {
       origin: process.env.ORIGIN?.split(",") || ["http://localhost:3000"],
-      credentials: true
+      credentials: true,
+      methods: ["GET", "POST"]
     },
-    transports: ["polling", "websocket"]
+    transports: ["polling", "websocket"],
+    allowUpgrades: true, // Đảm bảo cho phép upgrade
+    pingTimeout: 60000,
+    pingInterval: 25000
   });
 
   io.on("connection", (socket) => {

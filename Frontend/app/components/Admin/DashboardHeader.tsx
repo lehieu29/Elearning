@@ -4,12 +4,11 @@ import {
   useGetAllNotificationsQuery,
   useUpdateNotificationStatusMutation,
 } from "@/redux/features/notifications/notificationsApi";
-import React, { FC, useEffect, useState } from "react";
+import React, { FC, useEffect, useState, useRef } from "react";
 import { IoMdNotificationsOutline } from "react-icons/io";
-import socketIO from "socket.io-client";
 import { format } from "timeago.js";
-const ENDPOINT = process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || "";
-const socketId = socketIO(ENDPOINT, { transports: ["websocket"] });
+import socketInstance from "@/app/utils/socketConfig";
+const socketId = socketInstance;
 
 type Props = {
   open?: boolean;
@@ -23,17 +22,24 @@ const DashboardHeader: FC<Props> = ({ open, setOpen }) => {
   const [updateNotificationStatus, { isSuccess }] =
     useUpdateNotificationStatusMutation();
   const [notifications, setNotifications] = useState<any>([]);
-  const [audio, setAudio] = useState<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     // Kiểm tra chỉ trên client-side (tránh SSR)
     if (typeof window !== "undefined") {
-      setAudio(new Audio("/assests/Notification.mp3"));
+      const newAudio = new Audio("/assests/Notification.mp3");
+      audioRef.current = newAudio;
+      // Preload audio để sẵn sàng phát khi cần
+      newAudio.load();
     }
   }, []);
 
   const playNotificationSound = () => {
-    audio.play();
+    if (audioRef.current) {
+      audioRef.current.play().catch((error) => {
+        console.error("Error playing notification sound:", error);
+      });
+    }
   };
 
   useEffect(() => {
@@ -45,8 +51,7 @@ const DashboardHeader: FC<Props> = ({ open, setOpen }) => {
     if (isSuccess) {
       refetch();
     }
-    audio.load();
-  }, [data, isSuccess, audio]);
+  }, [data, isSuccess]);
 
   useEffect(() => {
     socketId.on("newNotification", (data) => {

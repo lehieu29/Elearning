@@ -16,7 +16,17 @@ metadata:
     # WebSocket support
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-    
+
+    # Timeout và buffer settings cho WebSocket
+    traefik.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    traefik.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    traefik.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+    traefik.ingress.kubernetes.io/proxy-buffer-size: "16k"
+
+    # Sticky sessions (quan trọng cho Socket.IO)
+    traefik.ingress.kubernetes.io/affinity: "true"
+    traefik.ingress.kubernetes.io/session-cookie-name: "sticky"
+
     # Content compression
     traefik.ingress.kubernetes.io/compress: "true"
 spec:

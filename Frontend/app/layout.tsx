@@ -11,9 +11,8 @@ import { VideoQueueProvider } from "./contexts/VideoQueueContext";
 import VideoQueue from "./components/VideoQueue/VideoQueue";
 import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
 import Loader from "./components/Loader/Loader";
-import socketIO from "socket.io-client";
-const ENDPOINT = process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || "";
-const socketId = socketIO(ENDPOINT, { transports: ["websocket"] });
+import socketInstance from "./utils/socketConfig";
+const socketId = socketInstance;
 
 // const inter = Inter({ subsets: ["latin"] });
 const poppins = Poppins({

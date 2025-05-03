@@ -1,7 +1,8 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import io, { Socket } from "socket.io-client";
+import { createSocket } from "../utils/socketConfig";
+import { Socket } from "socket.io-client";
 
 // Khai báo kiểu dữ liệu cho video trong queue
 export interface VideoQueueItem {
@@ -46,7 +47,7 @@ export const VideoQueueProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Kết nối Socket.IO khi component mount
   useEffect(() => {
     // Kết nối đến Socket.IO server
-    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || "", {
+    const socketInstance = createSocket({
       path: "/socket.io",
       transports: ["polling", "websocket"]
     });

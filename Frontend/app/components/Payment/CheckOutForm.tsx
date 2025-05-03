@@ -3,9 +3,8 @@ import { useCreateOrderMutation } from "@/redux/features/orders/ordersApi";
 import { redirect } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import socketIO from "socket.io-client";
-const ENDPOINT = process.env.NEXT_PUBLIC_SOCKET_SERVER_URI || "";
-const socketId = socketIO(ENDPOINT, { transports: ["websocket"] });
+import socketInstance from "@/app/utils/socketConfig";
+const socketId = socketInstance;
 
 type Props = {
   setOpen: any;
