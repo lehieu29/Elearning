@@ -13,9 +13,19 @@ metadata:
     traefik.ingress.kubernetes.io/cors-allow-credentials: "true"
     traefik.ingress.kubernetes.io/cors-max-age: "86400"
     
-    # WebSocket support
+    # WebSocket support - CRITICAL UPDATES
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+    
+    # Headers for WebSocket support
+    traefik.ingress.kubernetes.io/custom-request-headers: "Connection:keep-alive,Upgrade||Upgrade:websocket"
+    traefik.ingress.kubernetes.io/custom-response-headers: "Connection:keep-alive,Upgrade"
+    
+    # Preserve host header
+    traefik.ingress.kubernetes.io/preserve-host: "true"
+    
+    # Buffering settings
+    traefik.ingress.kubernetes.io/buffering: "off"
 
     # Timeout và buffer settings cho WebSocket
     traefik.ingress.kubernetes.io/proxy-read-timeout: "3600"
@@ -26,6 +36,8 @@ metadata:
     # Sticky sessions (quan trọng cho Socket.IO)
     traefik.ingress.kubernetes.io/affinity: "true"
     traefik.ingress.kubernetes.io/session-cookie-name: "sticky"
+    traefik.ingress.kubernetes.io/session-cookie-max-age: "86400"
+    traefik.ingress.kubernetes.io/session-cookie-secure: "true"
 
     # Content compression
     traefik.ingress.kubernetes.io/compress: "true"
@@ -60,6 +72,13 @@ spec:
   - host: api.studynow.space
     http:
       paths:
+      - path: /socket.io
+        pathType: Prefix
+        backend:
+          service:
+            name: elearning-backend-service
+            port:
+              number: 80
       - path: /
         pathType: Prefix
         backend:

@@ -89,7 +89,7 @@ export const uploadVideoHandler = CatchAsyncError(
 
       try {
         // 1. Tạo phụ đề và gắn vào video
-        emitVideoProgress(processId, 5, 'Bắt đầu xử lý video và tạo phụ đề...', { fileName });
+        emitVideoProgress(processId, 5, 'Starting video processing and generating subtitles...', { fileName });
 
         const { outputVideoPath } = await processVideoAndGenerateSubtitlesOptimized(
           filePath,
@@ -101,7 +101,7 @@ export const uploadVideoHandler = CatchAsyncError(
         );
 
         // 2. Upload video có phụ đề lên Cloudinary
-        emitVideoProgress(processId, 85, 'Đang tải video lên Cloudinary...', { fileName });
+        emitVideoProgress(processId, 85, 'Uploading video to Cloudinary...', { fileName });
 
         const result = await cloudinary.v2.uploader.upload(outputVideoPath, {
           resource_type: "video",
@@ -138,11 +138,11 @@ export const uploadVideoHandler = CatchAsyncError(
 
       } catch (processingError: any) {
         console.error(`[${processId}] Video processing error: ${processingError.message}`);
-        emitVideoProgress(processId, 50, `Gặp lỗi khi xử lý: ${processingError.message}`, { fileName });
+        emitVideoProgress(processId, 50, `Error encountered while processing: ${processingError.message}`, { fileName });
 
         // Nếu xử lý phụ đề thất bại, vẫn upload video gốc lên Cloudinary
         try {
-          emitVideoProgress(processId, 60, 'Đang tải video gốc lên Cloudinary...', { fileName });
+          emitVideoProgress(processId, 60, 'Uploading original video to Cloudinary...', { fileName });
 
           const result = await cloudinary.v2.uploader.upload(filePath, {
             resource_type: "video",
@@ -150,7 +150,7 @@ export const uploadVideoHandler = CatchAsyncError(
             timeout: 600000,
           });
 
-          emitVideoProgress(processId, 100, 'Đã tải lên video gốc (không có phụ đề)', { 
+          emitVideoProgress(processId, 100, 'Original video uploaded (without subtitles)', { 
             fileName,
             publicId: result.public_id,
             url: result.secure_url,
@@ -176,7 +176,7 @@ export const uploadVideoHandler = CatchAsyncError(
 
         } catch (fallbackError: any) {
           console.error(`[${processId}] Fallback upload error: ${fallbackError.message}`);
-          emitVideoProgress(processId, 100, `Thất bại hoàn toàn: ${fallbackError.message}`, { 
+          emitVideoProgress(processId, 100, `Complete failure: ${fallbackError.message}`, { 
             fileName,
             error: fallbackError.message
           });

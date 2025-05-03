@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket Debug</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #status { font-size: 24px; margin-bottom: 20px; }
+        #logs { 
+            height: 400px; 
+            overflow-y: auto; 
+            border: 1px solid #ccc; 
+            padding: 10px;
+            background: #f5f5f5;
+        }
+        .log-entry { 
+            margin: 5px 0; 
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Socket.IO Debug Tool</h1>
+    <div id="status">Connecting...</div>
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    <div id="logs"></div>
+    
+    <script>
+        const endpoint = "https://api.studynow.space";
+        let socket;
+
+        function initSocket() {
+            socket = io(endpoint, {
+                transports: ["polling", "websocket"],
+                upgrade: true,
+                rememberUpgrade: true,
+                path: "/socket.io",
+                secure: true,
+                rejectUnauthorized: false,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 20000,
+                withCredentials: true
+            });
+
+            setupEventHandlers();
+        }
+
+        function setupEventHandlers() {
+            socket.on('connect', () => {
+                document.getElementById('status').textContent = 'Connected!';
+                document.getElementById('status').style.color = 'green';
+                log(`Connected with transport: ${socket.io.engine.transport.name}`, 'success');
+                log(`Socket ID: ${socket.id}`, 'success');
+            });
+
+            socket.on('connect_error', (error) => {
+                document.getElementById('status').textContent = 'Connection Error';
+                document.getElementById('status').style.color = 'red';
+                log(`Connection error: ${error.message}`, 'error');
+            });
+
+            socket.io.on("upgrade", () => {
+                log(`Upgraded to ${socket.io.engine.transport.name}`, 'success');
+            });
+
+            socket.on('disconnect', (reason) => {
+                document.getElementById('status').textContent = 'Disconnected';
+                document.getElementById('status').style.color = 'red';
+                log(`Disconnected: ${reason}`, 'error');
+            });
+
+            socket.on('reconnect_attempt', (attemptNumber) => {
+                log(`Reconnection attempt #${attemptNumber}`);
+            });
+
+            socket.on('reconnect', (attemptNumber) => {
+                log(`Reconnected after ${attemptNumber} attempts`, 'success');
+            });
+
+            socket.io.engine.on('packet', (packet) => {
+                log(`Packet type: ${packet.type}, data: ${JSON.stringify(packet.data)}`);
+            });
+        }
+
+        function log(message, className = '') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `log-entry ${className}`;
+            div.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+
+        function testConnection() {
+            if (socket && socket.connected) {
+                socket.emit('notification', { test: 'ping', timestamp: Date.now() });
+                log('Sent test message to server');
+            } else {
+                log('Socket not connected', 'error');
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        // Initialize on page load
+        initSocket();
+    </script>
+</body>
+</html>

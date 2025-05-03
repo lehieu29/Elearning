@@ -1,42 +1,65 @@
 "use client";
 import socketIO from "socket.io-client";
+import { socketDebugger } from './socketDebug';
 
 // Hàm lấy WebSocket URL với logic fallback
 export const getSocketEndpoint = () => {
-  // Trong môi trường production, sử dụng URL cố định
-  /*if (process.env.NODE_ENV === 'production') {
-    console.log("Socket URL: Sử dụng production");
-    return "api.studynow.space";
-  }*/
-  
-  // Sử dụng biến môi trường nếu có
   const envUrl = process.env.NEXT_PUBLIC_SOCKET_SERVER_URI;
   if (envUrl) {
     console.log("Socket URL: Sử dụng từ env", envUrl);
     return envUrl;
   }
   
-  // Fallback về localhost
   console.log("Socket URL: Fallback về localhost:8000");
   return "http://localhost:8000";
 };
 
-// Pre-initialize socket với URL đúng
-export const socketInstance = socketIO(getSocketEndpoint(), { 
-  transports: ["websocket"] 
-});
-
-// Exportable factory function để tạo socket mới khi cần
-export const createSocket = (options = {}) => {
-  return socketIO(getSocketEndpoint(), { 
-    transports: ["polling", "websocket"],
-    upgrade: true, // Cho phép upgrade lên websocket
-    rememberUpgrade: true,
-    path: "/socket.io",
-    secure: true,
-    rejectUnauthorized: false,
-    ...options
-  });
+// Function để xác định environment và secure status
+const isProduction = () => {
+  const endpoint = getSocketEndpoint();
+  return endpoint.startsWith('https://') || endpoint.startsWith('wss://');
 };
 
-export default socketInstance;
+// Cấu hình tối ưu cho Traefik Ingress + Socket.IO
+const defaultOptions = {
+  // QUAN TRỌNG: Polling trước, websocket sau
+  transports: ["polling", "websocket"],
+  
+  // Cho phép upgrade từ polling sang websocket
+  upgrade: true,
+  rememberUpgrade: true,
+  
+  // Path của socket.io endpoint
+  path: "/socket.io",
+  
+  // Tự động detect secure mode
+  secure: isProduction(),
+  
+  // Chấp nhận self-signed certificates (development)
+  rejectUnauthorized: false,
+  
+  // Reconnection strategy
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  
+  // Timeout settings phù hợp với Traefik
+  timeout: 20000,
+  
+  // CORS credentials
+  withCredentials: true
+};
+
+// Chỉ tạo một instance duy nhất
+const socket = socketIO(getSocketEndpoint(), defaultOptions);
+
+// Sử dụng debugger trong development
+if (process.env.NODE_ENV === 'development') {
+  socketDebugger(socket);
+}
+
+// Export function để lấy socket instance hiện tại
+export const getSocket = () => socket;
+
+export default socket;

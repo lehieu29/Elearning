@@ -7,8 +7,7 @@ import {
 import React, { FC, useEffect, useState, useRef } from "react";
 import { IoMdNotificationsOutline } from "react-icons/io";
 import { format } from "timeago.js";
-import socketInstance from "@/app/utils/socketConfig";
-const socketId = socketInstance;
+import { getSocket } from "@/app/utils/socketConfig";
 
 type Props = {
   open?: boolean;
@@ -54,10 +53,15 @@ const DashboardHeader: FC<Props> = ({ open, setOpen }) => {
   }, [data, isSuccess]);
 
   useEffect(() => {
-    socketId.on("newNotification", (data) => {
+    const socket = getSocket();
+    socket.on("newNotification", (data) => {
       refetch();
       playNotificationSound();
     });
+    
+    return () => {
+      socket.off("newNotification");
+    };
   }, []);
 
   const handleNotificationStatusChange = async (id: string) => {

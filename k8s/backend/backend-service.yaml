@@ -2,10 +2,20 @@ apiVersion: v1
 kind: Service
 metadata:
   name: elearning-backend-service
+  annotations:
+    # Thêm annotation cho sticky sessions
+    traefik.ingress.kubernetes.io/affinity: "true"
+    service.beta.kubernetes.io/external-traffic: "OnlyLocal"
 spec:
   selector:
     app: elearning-backend
   ports:
   - port: 80
     targetPort: 8000
+    name: http
+  # Thêm sessionAffinity để đảm bảo sticky sessions
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
   type: ClusterIP

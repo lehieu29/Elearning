@@ -7,14 +7,21 @@ let io: SocketIOServer;
 export const initSocketServer = (server: http.Server) => {
   io = new SocketIOServer(server, {
     cors: {
-      origin: process.env.ORIGIN?.split(",") || ["http://localhost:3000"],
+      origin: process.env.ORIGIN?.split(",") || [
+        "http://localhost:3000",
+        "https://studynow.space",
+        "https://www.studynow.space",
+        "https://api.studynow.space"
+      ],
       credentials: true,
-      methods: ["GET", "POST"]
+      methods: ["GET", "POST"],
+      allowedHeaders: ["Content-Type", "Authorization"]
     },
     transports: ["polling", "websocket"],
     allowUpgrades: true, // Đảm bảo cho phép upgrade
     pingTimeout: 60000,
-    pingInterval: 25000
+    pingInterval: 25000,
+    perMessageDeflate: false // Tắt compression để tránh issues với proxy
   });
 
   io.on("connection", (socket) => {

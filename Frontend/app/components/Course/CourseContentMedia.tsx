@@ -23,9 +23,8 @@ import {
 import { BiMessage, BiMessageRoundedDots } from "react-icons/bi";
 import { VscVerifiedFilled } from "react-icons/vsc";
 import Ratings from "@/app/utils/Ratings";
-import socketInstance from "@/app/utils/socketConfig";
+import { getSocket } from "@/app/utils/socketConfig";
 import Link from "next/link";
-const socketId = socketInstance;
 
 type Props = {
   data: any;
@@ -112,7 +111,8 @@ const CourseContentMedia = ({
       setQuestion("");
       refetch();
       // ADD NOTIFICATION
-      socketId.emit("notification", {
+      const socket = getSocket();
+      socket.emit("notification", {
         title: `New Question Received`,
         message: `You have a new question in ${data[activeVideo].title}`,
         userId: user._id,
@@ -123,7 +123,8 @@ const CourseContentMedia = ({
       refetch();
       // new reply when user is not admin
       if (user.role !== "admin") {
-        socketId.emit("notification", {
+        const socket = getSocket();
+        socket.emit("notification", {
           title: `New Reply Received`,
           message: `You have a new question in ${data[activeVideo].title}`,
           userId: user._id,
@@ -146,7 +147,8 @@ const CourseContentMedia = ({
       setReview("");
       setRating(1);
       courseRefetch();
-      socketId.emit("notification", {
+      const socket = getSocket();
+      socket.emit("notification", {
         title: `New Question Received`,
         message: `You have a new question in ${data[activeVideo].title}`,
         userId: user._id,

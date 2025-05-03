@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { createSocket } from "../utils/socketConfig";
+import { getSocket } from "../utils/socketConfig";
 import { Socket } from "socket.io-client";
 
 // Khai báo kiểu dữ liệu cho video trong queue
@@ -46,11 +46,8 @@ export const VideoQueueProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Kết nối Socket.IO khi component mount
   useEffect(() => {
-    // Kết nối đến Socket.IO server
-    const socketInstance = createSocket({
-      path: "/socket.io",
-      transports: ["polling", "websocket"]
-    });
+    // Sử dụng socket instance duy nhất
+    const socketInstance = getSocket();
     
     socketInstance.on("connect", () => {
       console.log("Socket connected for video queue updates");
@@ -103,7 +100,9 @@ export const VideoQueueProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     
     // Cleanup khi unmount
     return () => {
-      socketInstance.disconnect();
+      socketInstance.off("connect");
+      socketInstance.off("disconnect");
+      socketInstance.off("videoProgress");
     };
   }, []);
 

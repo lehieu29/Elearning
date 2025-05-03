@@ -11,8 +11,7 @@ import { VideoQueueProvider } from "./contexts/VideoQueueContext";
 import VideoQueue from "./components/VideoQueue/VideoQueue";
 import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
 import Loader from "./components/Loader/Loader";
-import socketInstance from "./utils/socketConfig";
-const socketId = socketInstance;
+import { getSocket } from "./utils/socketConfig";
 
 // const inter = Inter({ subsets: ["latin"] });
 const poppins = Poppins({
@@ -58,7 +57,20 @@ const Custom: FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isLoading } = useLoadUserQuery({});
 
   useEffect(() => {
-    socketId.on("connection", () => {});
+    const socket = getSocket();
+    
+    socket.on("connect", () => {
+      console.log("Main socket connected");
+    });
+    
+    socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
+    
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+    };
   }, []);
 
   return (

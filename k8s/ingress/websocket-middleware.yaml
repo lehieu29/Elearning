@@ -1,0 +1,4 @@
+# File này không cần thiết nữa vì đã sử dụng annotations trực tiếp trong ingress.yaml
+# Custom headers cho WebSocket support đã được cấu hình trong ingress.yaml thông qua:
+# - traefik.ingress.kubernetes.io/custom-request-headers
+# - traefik.ingress.kubernetes.io/custom-response-headers

@@ -10,6 +10,7 @@ import { notificationRouter } from "./routes/notification.route";
 import { analyticsRouter } from "./routes/analytics.route";
 import { layoutRouter } from "./routes/layout.route";
 import healthRouter from "./routes/health.route";
+import reportRouter from "./routes/report.routes";
 // import userRouter
 
 // create a server
@@ -58,7 +59,8 @@ app.use(
   notificationRouter,
   analyticsRouter,
   layoutRouter,
-  healthRouter
+  healthRouter,
+  reportRouter
 );
 
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

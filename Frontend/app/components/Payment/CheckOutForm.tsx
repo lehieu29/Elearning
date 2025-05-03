@@ -3,8 +3,7 @@ import { useCreateOrderMutation } from "@/redux/features/orders/ordersApi";
 import { redirect } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import socketInstance from "@/app/utils/socketConfig";
-const socketId = socketInstance;
+import { getSocket } from "@/app/utils/socketConfig";
 
 type Props = {
   setOpen: any;
@@ -58,7 +57,8 @@ const CheckOutForm = ({ setOpen, data, user, refetch }: Props) => {
   useEffect(() => {
     if (orderData) {
       refetch();
-      socketId.emit("notification", {
+      const socket = getSocket();
+      socket.emit("notification", {
         title: "New Order",
         message: `You have a new order from ${data.name}`,
         userId: user._id,

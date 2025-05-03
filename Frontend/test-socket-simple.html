@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Socket Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Simple Socket.IO Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="logs"></div>
+    
+    <script>
+        const socket = io("https://api.studynow.space", {
+            transports: ["polling", "websocket"],
+            path: "/socket.io",
+            secure: true,
+            rejectUnauthorized: false,
+            withCredentials: true
+        });
+
+        function log(message) {
+            const logs = document.getElementById('logs');
+            const p = document.createElement('p');
+            p.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logs.appendChild(p);
+            console.log(message);
+        }
+
+        socket.on('connect', () => {
+            document.getElementById('status').textContent = 'Connected!';
+            log(`Connected with ID: ${socket.id}`);
+            log(`Transport: ${socket.io.engine.transport.name}`);
+        });
+
+        socket.on('connect_error', (error) => {
+            log(`Connection error: ${error.message}`);
+        });
+
+        socket.on('disconnect', (reason) => {
+            document.getElementById('status').textContent = 'Disconnected';
+            log(`Disconnected: ${reason}`);
+        });
+
+        // Thử emit một message sau khi kết nối
+        socket.on('connect', () => {
+            setTimeout(() => {
+                socket.emit('notification', { test: 'hello' });
+                log('Sent test message');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
