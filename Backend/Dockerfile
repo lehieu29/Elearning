@@ -1,6 +1,9 @@
 FROM node:18-alpine
 
-RUN apk add --no-cache ffmpeg
+# Cài đặt ffmpeg và các font cần thiết
+RUN apk add --no-cache ffmpeg font-dejavu msttcorefonts-installer && \
+    update-ms-fonts && \
+    fc-cache -f
 
 WORKDIR /app
 
