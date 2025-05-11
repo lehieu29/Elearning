@@ -8,6 +8,10 @@ import { MdOutlineKeyboardArrowDown } from "react-icons/md";
 import { useUploadVideoMutation } from "@/redux/features/courses/coursesApi";
 import { useVideoQueue } from "@/app/contexts/VideoQueueContext";
 
+// Configuration toggle for sync/async upload
+// TODO
+const USE_SYNC_UPLOAD = false; // Change to false to rollback to async mode
+
 type Props = {
   active: number;
   setActive: (active: number) => void;
@@ -34,6 +38,9 @@ const CourseContent: FC<Props> = ({
 
   // Thêm videoQueue hook
   const { addToQueue, setVideoUrlFromQueue } = useVideoQueue();
+  
+  // Loading state for sync upload
+  const [syncUploadingIndexes, setSyncUploadingIndexes] = useState<number[]>([]);
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
@@ -85,31 +92,75 @@ const CourseContent: FC<Props> = ({
     // Show loading toast
     const loadingToast = toast.loading("Starting upload...", { duration: 5000 });
 
-    uploadVideo(file)
-      .unwrap()
-      .then((result) => {
-        console.log('Upload started:', result);
-        toast.dismiss(loadingToast);
-        toast.success("Upload started! You can continue editing", { duration: 3000 });
-
-        // Thêm video vào queue
-        addToQueue({
-          processId: result.processId,
-          fileName: file.name,
-          uploadType: "content",
-          contentIndex: index,
+    if (USE_SYNC_UPLOAD) {
+      // Luồng xử lý đồng bộ mới
+      setSyncUploadingIndexes(prev => [...prev, index]);
+      uploadVideo(file)
+        .unwrap()
+        .then((result: any) => {
+          console.log('Upload success (sync):', result);
+          toast.dismiss(loadingToast);
+          toast.success("Video uploaded successfully!", { duration: 3000 });
+          
+          // Cập nhật courseContentData trực tiếp
+          const updatedData = [...courseContentData];
+          
+          // Gán videoUrl = publicId
+          if (result.data && result.data.publicId) {
+            updatedData[index].videoUrl = result.data.publicId;
+          }
+          
+          // Gán videoLength = duration in minutes
+          if (result.data && result.data.duration) {
+            const durationInMinutes = Math.ceil(result.data.duration / 60);
+            updatedData[index].videoLength = durationInMinutes.toString();
+          }
+          
+          setCourseContentData(updatedData);
+          
+          // Không cần thêm vào queue vì đã xử lý xong
+        })
+        .catch((error) => {
+          console.error('Upload error:', error);
+          toast.dismiss(loadingToast);
+          toast.error(error.data?.message || "Error uploading video", { duration: 5000 });
+          
+          // Reset file name
+          const updatedFileNames = [...uploadedFileNames];
+          updatedFileNames[index] = "";
+          setUploadedFileNames(updatedFileNames);
+        })
+        .finally(() => {
+          setSyncUploadingIndexes(prev => prev.filter(i => i !== index));
         });
-      })
-      .catch((error) => {
-        console.error('Upload error:', error);
-        toast.dismiss(loadingToast);
-        toast.error(error.data?.message || "Unknown error when uploading video", { duration: 5000 });
+    } else {
+      // Giữ nguyên logic cũ để có thể rollback
+      uploadVideo(file)
+        .unwrap()
+        .then((result) => {
+          console.log('Upload started:', result);
+          toast.dismiss(loadingToast);
+          toast.success("Upload started! You can continue editing", { duration: 3000 });
 
-        // Reset the file name for this index
-        const updatedFileNames = [...uploadedFileNames];
-        updatedFileNames[index] = "";
-        setUploadedFileNames(updatedFileNames);
-      });
+          // Thêm video vào queue
+          addToQueue({
+            processId: result.processId,
+            fileName: file.name,
+            uploadType: "content",
+            contentIndex: index,
+          });
+        })
+        .catch((error) => {
+          console.error('Upload error:', error);
+          toast.dismiss(loadingToast);
+          toast.error(error.data?.message || "Unknown error when uploading video", { duration: 5000 });
+
+          // Reset the file name for this index
+          const updatedFileNames = [...uploadedFileNames];
+          updatedFileNames[index] = "";
+          setUploadedFileNames(updatedFileNames);
+        });
+    }
   };
 
   const newContentHandler = (item: any) => {
@@ -319,6 +370,7 @@ const CourseContent: FC<Props> = ({
                         accept="video/*"
                         id={`videoFile-${index}`}
                         className="hidden"
+                        disabled={syncUploadingIndexes.includes(index)}
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
@@ -328,9 +380,9 @@ const CourseContent: FC<Props> = ({
                       />
                       <label
                         htmlFor={`videoFile-${index}`}
-                        className="mt-[10px] h-[40px] cursor-pointer rounded dark:border-white border-[#00000026] p-3 border flex items-center justify-center bg-transparent"
+                        className={`mt-[10px] h-[40px] cursor-pointer rounded dark:border-white border-[#00000026] p-3 border flex items-center justify-center bg-transparent ${syncUploadingIndexes.includes(index) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        {uploadedFileNames[index] || (item.videoUrl ? "Video uploaded" : "Choose File")}
+                        {syncUploadingIndexes.includes(index) ? "Uploading..." : (uploadedFileNames[index] || (item.videoUrl ? "Video uploaded" : "Choose File"))}
                       </label>
 
                       {/* Display video duration if available */}

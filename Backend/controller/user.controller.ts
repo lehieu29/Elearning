@@ -65,11 +65,11 @@ export const registrationUser = CatchAsyncError(
       const data = { user: { name: user.name }, activationCode };
 
       // store in html
-      const html = await ejs.renderFile(
+      /*const html = await ejs.renderFile(
         // platform-agnostic path
         path.join(__dirname, "../mails/activation-mail.ejs"),
         data
-      );
+      );*/
 
       // send the mail
       try {

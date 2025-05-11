@@ -6,6 +6,10 @@ import React, { FC, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useVideoQueue } from "@/app/contexts/VideoQueueContext";
 
+// Configuration toggle for sync/async upload
+// TODO
+const USE_SYNC_UPLOAD = false; // Change to false to rollback to async mode
+
 type Props = {
   courseInfo: any;
   setCourseInfo: (courseInfo: any) => void;
@@ -27,6 +31,9 @@ const CourseInformation: FC<Props> = ({
   
   // Thêm videoQueue hook
   const { addToQueue, setVideoUrlFromQueue } = useVideoQueue();
+  
+  // Loading state for sync upload
+  const [isSyncUploading, setIsSyncUploading] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -150,26 +157,55 @@ const CourseInformation: FC<Props> = ({
     // Hiển thị toast uploading
     const loadingToast = toast.loading("Starting upload...", { duration: 5000 });
 
-    uploadVideo(file)
-      .unwrap()
-      .then((result) => {
-        console.log('Upload started:', result);
-        toast.dismiss(loadingToast);
-        toast.success("Upload started! You can continue editing while it processes", { duration: 3000 });
-        
-        // Thêm video vào queue
-        addToQueue({
-          processId: result.processId,
-          fileName: file.name,
-          uploadType: "demo",
+    if (USE_SYNC_UPLOAD) {
+      // Luồng xử lý đồng bộ mới
+      setIsSyncUploading(true);
+      uploadVideo(file)
+        .unwrap()
+        .then((result: any) => {
+          console.log('Upload success (sync):', result);
+          toast.dismiss(loadingToast);
+          toast.success("Video uploaded successfully!", { duration: 3000 });
+          
+          // Gán publicId vào demoUrl
+          if (result.data && result.data.publicId) {
+            setCourseInfo({ ...courseInfo, demoUrl: result.data.publicId });
+          }
+          
+          // Không cần thêm vào queue vì đã xử lý xong
+        })
+        .catch((error) => {
+          console.error('Upload error:', error);
+          toast.dismiss(loadingToast);
+          toast.error(error.data?.message || "Error uploading video", { duration: 5000 });
+          setUploadedFileName("");
+        })
+        .finally(() => {
+          setIsSyncUploading(false);
         });
-      })
-      .catch((error) => {
-        console.error('Upload error:', error);
-        toast.dismiss(loadingToast);
-        toast.error(error.data?.message || "Unknown error when uploading video", { duration: 5000 });
-        setUploadedFileName("");
-      });
+    } else {
+      // Giữ nguyên logic cũ để có thể rollback
+      uploadVideo(file)
+        .unwrap()
+        .then((result) => {
+          console.log('Upload started:', result);
+          toast.dismiss(loadingToast);
+          toast.success("Upload started! You can continue editing while it processes", { duration: 3000 });
+          
+          // Thêm video vào queue
+          addToQueue({
+            processId: result.processId,
+            fileName: file.name,
+            uploadType: "demo",
+          });
+        })
+        .catch((error) => {
+          console.error('Upload error:', error);
+          toast.dismiss(loadingToast);
+          toast.error(error.data?.message || "Unknown error when uploading video", { duration: 5000 });
+          setUploadedFileName("");
+        });
+    }
   };
 
   return (
@@ -321,6 +357,7 @@ const CourseInformation: FC<Props> = ({
               accept="video/*"
               // Removed required
               id="demoURL"
+              disabled={isSyncUploading}
               onChange={(e: any) => {
                 const file = e.target.files?.[0];
                 if (file) {
@@ -330,8 +367,11 @@ const CourseInformation: FC<Props> = ({
               className={`
             ${styles.input} hidden`}
             />
-            <label htmlFor="demoURL" className="mt-[10px] h-[40px] cursor-pointer rounded dark:border-white border-[#00000026] p-3 border flex items-center justify-center bg-transparent">
-              {uploadedFileName || (courseInfo.demoUrl ? "Video uploaded" : "Choose File")}
+            <label 
+              htmlFor="demoURL" 
+              className={`mt-[10px] h-[40px] cursor-pointer rounded dark:border-white border-[#00000026] p-3 border flex items-center justify-center bg-transparent ${isSyncUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isSyncUploading ? "Uploading..." : (uploadedFileName || (courseInfo.demoUrl ? "Video uploaded" : "Choose File"))}
             </label>
           </div>
         </div>

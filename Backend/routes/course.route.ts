@@ -88,6 +88,15 @@ courseRouter.post(
   uploadVideoHandler
 );
 
+// TODO
+/*courseRouter.post(
+  "/upload-video",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  upload.single("file"),
+  addSubtitlesToVideo
+);*/
+
 // Allow anonymous users to upload subtitles
 courseRouter.post(
   "/add-subtitle",

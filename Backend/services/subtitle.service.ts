@@ -573,8 +573,8 @@ export async function burnSubtitlesToVideo(
     return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
     .inputOptions('-threads 4') // Tăng hiệu suất
-    // .inputOptions('-report') // Thêm flag để tạo file log chi tiết
-    // .inputOptions('-loglevel debug') // Thêm loglevel debug để hiển thị thông tin chi tiết hơn
+    .inputOptions('-report') // Thêm flag để tạo file log chi tiết
+    .inputOptions('-loglevel debug') // Thêm loglevel debug để hiển thị thông tin chi tiết hơn
     // Sử dụng videoFilter để tăng tính tương thích
     .videoFilter(filterString)
             .outputOptions('-c:v', 'libx264')
@@ -626,8 +626,8 @@ export async function burnSubtitlesToVideo(
                     // Thử lại với đường dẫn đơn giản hơn
                     ffmpeg(videoPath)
                     .inputOptions('-threads 4')
-                    // .inputOptions('-report')
-                    // .inputOptions('-loglevel debug') // Tăng loglevel để gỡ lỗi tốt hơn
+                    .inputOptions('-report')
+                    .inputOptions('-loglevel debug') // Tăng loglevel để gỡ lỗi tốt hơn
                     .videoFilter(retryFilterString) // Sử dụng videoFilter
                         .outputOptions('-c:v', 'libx264')
                         .outputOptions('-crf', '18')
@@ -675,7 +675,6 @@ export async function burnSubtitlesToVideoSimplified(
     outputPath: string,
     style?: SubtitleStyle | string
 ): Promise<string> {
-    let ffmpegOutput = ''; // Variable to capture FFmpeg output directly
     // 1. Kiểm tra thư mục uploads tồn tại
     const uploadsDir = './uploads';
     if (!fs.existsSync(uploadsDir)) {
@@ -683,116 +682,81 @@ export async function burnSubtitlesToVideoSimplified(
         console.log(`Created uploads directory: ${uploadsDir}`);
     }
 
-    // 2. DEBUG: Log đường dẫn để kiểm tra
-    console.log('=== DEBUG PATHS ===');
-    console.log('Input video path:', videoPath);
-    console.log('Input subtitle path:', subtitlePath);
-    console.log('Output path:', outputPath);
-    console.log('Current working directory:', process.cwd());
-
-    // 3. Xác định đường dẫn phụ đề chính xác
-    // Nếu đang chạy trong Docker, cần xử lý đường dẫn phù hợp
-    let uploadSubtitlePath = subtitlePath;
+    // 2. Sử dụng file phụ đề trong thư mục uploads
+    // Trong trường hợp không tìm thấy file phụ đề, tạo file mới
+    const uploadSubtitlePath = 'uploads/subtitles.srt';
     
-    // Nếu subtitle path là đường dẫn tương đối, chuyển sang tuyệt đối
-    if (!path.isAbsolute(subtitlePath)) {
-        uploadSubtitlePath = path.resolve(process.cwd(), subtitlePath);
-    }
-    
-    console.log('Resolved subtitle path:', uploadSubtitlePath);
-    
-    // 4. Kiểm tra file phụ đề có tồn tại không
     if (!fs.existsSync(uploadSubtitlePath)) {
-        console.error(`ERROR: Subtitle file not found at: ${uploadSubtitlePath}`);
+        console.log(`Subtitle file not found at: ${uploadSubtitlePath}`);
         
-        // Thử với đường dẫn gốc
-        if (fs.existsSync(subtitlePath)) {
-            console.log(`Found subtitle at original path: ${subtitlePath}`);
-            uploadSubtitlePath = subtitlePath;
-        } else {
-            // Thử với đường dẫn trong uploads
-            const uploadsSubtitlePath = path.join('./uploads', 'subtitles.srt');
-            if (fs.existsSync(uploadsSubtitlePath)) {
-                console.log(`Found subtitle in uploads: ${uploadsSubtitlePath}`);
-                uploadSubtitlePath = uploadsSubtitlePath;
-            } else {
-                throw new Error(`Subtitle file not found at any expected location`);
-            }
+        // Tạo file phụ đề mẫu tiếng Việt với UTF-8 BOM
+        const testSubtitle = `1
+00:00:01,000 --> 00:00:05,000
+Phụ đề mẫu - Đây là video tự động tạo
+
+2
+00:00:06,000 --> 00:00:10,000
+Kiểm tra hiển thị tiếng Việt: ă, â, đ, ê, ô, ơ, ư
+`;
+
+        // Thêm UTF-8 BOM để đảm bảo tiếng Việt hiển thị đúng
+        const bomPrefix = Buffer.from([0xEF, 0xBB, 0xBF]);
+        const contentBuffer = Buffer.concat([
+            bomPrefix,
+            Buffer.from(testSubtitle, 'utf8')
+        ]);
+
+        fs.writeFileSync(uploadSubtitlePath, contentBuffer);
+        console.log(`Created test subtitle file at: ${uploadSubtitlePath}`);
+    } else {
+        // Nếu có file phụ đề được cung cấp từ tham số, sao chép vào uploads nếu khác đường dẫn
+        if (subtitlePath !== uploadSubtitlePath && fs.existsSync(subtitlePath)) {
+            fs.copyFileSync(subtitlePath, uploadSubtitlePath);
+            console.log(`Copied subtitle to uploads folder: ${uploadSubtitlePath}`);
         }
+        console.log('Phụ đề tồn tại trong thư mục uploads');
     }
 
-    // 5. Kiểm tra nội dung file phụ đề
+    // 3. Kiểm tra nội dung file phụ đề
     try {
         const subtitleStats = fs.statSync(uploadSubtitlePath);
-        console.log(`Subtitle file size: ${subtitleStats.size} bytes`);
-        
         if (subtitleStats.size === 0) {
-            console.error(`ERROR: Subtitle file is empty: ${uploadSubtitlePath}`);
+            console.log(`Subtitle file is empty: ${uploadSubtitlePath}`);
             throw new Error(`Subtitle file is empty: ${uploadSubtitlePath}`);
         }
 
         // Log nội dung phụ đề để debug
-        const subtitleContent = fs.readFileSync(uploadSubtitlePath, 'utf8');
-        console.log(`Subtitle content preview (first 200 chars): ${subtitleContent.substring(0, 200)}...`);
-        
-        // Kiểm tra format SRT cơ bản
-        if (!subtitleContent.includes('-->')) {
-            console.warn('WARNING: Subtitle file may not be in valid SRT format');
-        }
+        const subtitleContent = fs.readFileSync(uploadSubtitlePath, 'utf8').substring(0, 200);
+        console.log(`Subtitle content preview: ${subtitleContent}...`);
     } catch (error) {
         console.error(`Error checking subtitle file: ${error}`);
-        throw error;
     }
 
-    // 6. Xử lý đường dẫn cho FFmpeg
-    // Quan trọng: Chuyển tất cả đường dẫn thành tuyệt đối để đảm bảo nhất quán
-    let ffmpegSubtitlePath = uploadSubtitlePath;
-    
-    // Nếu đang chạy trong Docker (video path bắt đầu với /app/)
-    if (videoPath.startsWith('/app/')) {
-        // Docker working directory là /app
-        // Nếu subtitle path là tương đối, chuyển sang tuyệt đối với /app
-        if (!path.isAbsolute(ffmpegSubtitlePath)) {
-            // Chuyển tương đối thành tuyệt đối bắt đầu từ /app
-            ffmpegSubtitlePath = path.join('/app', ffmpegSubtitlePath);
-        }
-        
-        // Đảm bảo đường dẫn là tuyệt đối và bắt đầu với /app
-        if (!ffmpegSubtitlePath.startsWith('/app')) {
-            ffmpegSubtitlePath = '/app/' + ffmpegSubtitlePath.replace(/^\/+/, '');
-        }
-    } else {
-        // Nếu không phải Docker, cũng chuyển thành đường dẫn tuyệt đối
-        if (!path.isAbsolute(ffmpegSubtitlePath)) {
-            ffmpegSubtitlePath = path.resolve(ffmpegSubtitlePath);
-        }
-    }
-    
+    // 4. Sử dụng đường dẫn tương đối đơn giản
     // Chuyển đổi backslash sang forward slash (cho Windows)
-    const escapedSubtitlePath = ffmpegSubtitlePath.replace(/\\/g, '/');
-    
-    // Tạo chuỗi filter cho ffmpeg - sử dụng escape cho dấu quote
+    const escapedSubtitlePath = 'uploads/subtitles.srt'.replace(/\\/g, '/');
+
+    // Tạo chuỗi filter đơn giản cho ffmpeg
     const styleParams = 'FontSize=24,Outline=1,Shadow=0,MarginV=25';
-    const filterString = `subtitles=${escapedSubtitlePath}:force_style='${styleParams}'`;
-    
-    console.log('=== FFMPEG PATH INFO ===');
+    const filterString = `subtitles='${escapedSubtitlePath}:force_style=${styleParams}'`;
+
     console.log(`Platform: ${process.platform}`);
-    console.log(`Video path: ${videoPath}`);
     console.log(`Original subtitle path: ${subtitlePath}`);
-    console.log(`Resolved subtitle path: ${uploadSubtitlePath}`);
-    console.log(`FFmpeg subtitle path: ${ffmpegSubtitlePath}`);
     console.log(`Escaped subtitle path: ${escapedSubtitlePath}`);
     console.log(`Filter string: ${filterString}`);
 
+    // 4. Tạo chuỗi style đơn giản, tránh các tham số phức tạp
+    const styleString = "FontName=Arial,FontSize=24,Outline=1,Shadow=0,MarginV=25";
+
     return new Promise((resolve, reject) => {
         try {
-            // 7. Tạo lệnh FFmpeg với cấu hình chính xác
+            // 5. Tạo lệnh FFmpeg đơn giản nhất có thể - chỉ dùng các tham số cốt lõi
             const ffmpegCommand = ffmpeg(videoPath)
                 .outputOptions('-y') // Ghi đè lên file đầu ra nếu đã tồn tại
-                // .inputOptions('-report') // Thêm flag để tạo file log chi tiết
-                // .inputOptions('-loglevel debug') // Thêm loglevel debug để hiển thị thông tin chi tiết hơn
-                // Sử dụng videoFilter với cú pháp chính xác
-                .videoFilter(filterString)
+                .inputOptions('-report') // Thêm flag để tạo file log chi tiết
+                .inputOptions('-loglevel debug') // Thêm loglevel debug để hiển thị thông tin chi tiết hơn
+                // Sử dụng addOption thay vì videoFilter để tăng tính tương thích
+                .addOption('-vf', filterString)
                 .outputOptions('-c:v', 'libx264') // Dùng encoder phần mềm tiêu chuẩn
                 .outputOptions('-crf', '18') // Chất lượng cao
                 .outputOptions('-preset', 'slow') // Preset chất lượng cao
@@ -804,91 +768,8 @@ export async function burnSubtitlesToVideoSimplified(
                 .on('start', (commandLine: string) => {
                     console.log('FFmpeg command:', commandLine);
                 })
-                .on('stderr', (stderrLine: string) => {
-                    // Capture FFmpeg output directly
-                    ffmpegOutput += stderrLine + '\n';
-                    
-                    // Log lỗi quan trọng ngay lập tức
-                    if (stderrLine.toLowerCase().includes('error')) {
-                        console.error('FFmpeg Error:', stderrLine);
-                    }
-                    if (stderrLine.toLowerCase().includes('no such file')) {
-                        console.error('FFmpeg File Error:', stderrLine);
-                    }
-                    if (stderrLine.toLowerCase().includes('subtitle')) {
-                        console.log('FFmpeg Subtitle:', stderrLine);
-                    }
-                })
-                .on('end', async () => {
+                .on('end', () => {
                     console.log('Subtitles burned successfully');
-                    
-                    // Kiểm tra file output được tạo
-                    if (!fs.existsSync(outputPath)) {
-                        console.error('ERROR: Output file was not created');
-                        reject(new Error('Output file was not created'));
-                        return;
-                    }
-                    
-                    // Kiểm tra kích thước file output
-                    const outputStats = fs.statSync(outputPath);
-                    const inputStats = fs.statSync(videoPath);
-                    
-                    console.log(`Input video size: ${inputStats.size} bytes`);
-                    console.log(`Output video size: ${outputStats.size} bytes`);
-                    
-                    // Nếu output nhỏ hơn đáng kể, có thể có vấn đề
-                    if (outputStats.size < inputStats.size * 0.5) {
-                        console.warn('WARNING: Output file is significantly smaller than input');
-                    }
-                    
-                    // Save FFmpeg output directly without looking for log files
-                    if (ffmpegOutput) {
-                        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-                        const reportName = `ffmpeg_${timestamp}_output.log`;
-                        
-                        try {
-                            // await reportService.saveReport(reportName, ffmpegOutput, 'ffmpeg');
-                            console.log('FFmpeg output saved successfully as:', reportName);
-                            
-                            // Log summary
-                            const lines = ffmpegOutput.split('\n');
-                            const summary = {
-                                totalLines: lines.length,
-                                errors: lines.filter(l => l.toLowerCase().includes('error')).length,
-                                warnings: lines.filter(l => l.toLowerCase().includes('warning')).length,
-                                duration: lines.find(l => l.includes('Duration'))?.trim(),
-                                videoInfo: lines.find(l => l.includes('Video:'))?.trim(),
-                                audioInfo: lines.find(l => l.includes('Audio:'))?.trim()
-                            };
-                            
-                            console.log('=== FFMPEG OUTPUT SUMMARY ===');
-                            console.log(JSON.stringify(summary, null, 2));
-                        } catch (error) {
-                            console.error('Error saving FFmpeg output:', error);
-                        }
-                    } else {
-                        console.log('No FFmpeg output captured');
-                    }
-                    
-                    // Also try to save report file if it exists (fallback)
-                    try {
-                        /*const reportFiles = fs.readdirSync(process.cwd()).filter(file => 
-                            file.startsWith('ffmpeg-') && file.endsWith('.log')
-                        );
-                        
-                        if (reportFiles.length > 0) {
-                            const latestReport = reportFiles.sort().pop();
-                            if (latestReport) {
-                                const reportContent = fs.readFileSync(latestReport, 'utf8');
-                                // await reportService.saveReport(latestReport, reportContent, 'ffmpeg');
-                                fs.unlinkSync(latestReport);
-                                console.log(`Also saved report file: ${latestReport}`);
-                            }
-                        }*/
-                    } catch (error) {
-                        // Silent catch - this is just a fallback
-                    }
-                    
                     resolve(outputPath);
                 })
                 .on('error', (err: Error) => {
@@ -939,8 +820,8 @@ export async function burnSubtitlesToVideoSimplified(
                         // Thử lại với đường dẫn đơn giản hơn
                         ffmpeg(videoPath)
                         .outputOptions('-y')
-                        // .inputOptions('-report') // Thêm report để log file
-                        // .inputOptions('-loglevel debug') // Tăng loglevel để gỡ lỗi tốt hơn
+                        .inputOptions('-report') // Thêm report để log file
+                        .inputOptions('-loglevel debug') // Tăng loglevel để gỡ lỗi tốt hơn
                         // Sử dụng videoFilter để tăng tính tương thích
                         .videoFilter(retryFilterString)
                             .outputOptions('-c:v', 'libx264')
@@ -949,35 +830,8 @@ export async function burnSubtitlesToVideoSimplified(
                             .outputOptions('-c:a', 'copy')
                             .output(outputPath)
                             .on('start', (cmd) => console.log('Retry FFmpeg command:', cmd))
-                            .on('end', async () => {
+                            .on('end', () => {
                                 console.log('Subtitles burned successfully with alternate path');
-                                
-                                // Save FFmpeg report
-                                try {
-                                    const reportFiles = fs.readdirSync(process.cwd()).filter(file => 
-                                        file.startsWith('ffmpeg-') && file.endsWith('.log')
-                                    );
-                                    
-                                    if (reportFiles.length > 0) {
-                                        const latestReport = reportFiles.sort().pop();
-                                        if (latestReport) {
-                                            const reportContent = fs.readFileSync(latestReport, 'utf8');
-                                            
-                                            // Lưu report thay vì xóa
-                                            // await reportService.saveReport(latestReport, reportContent, 'ffmpeg');
-                                            console.log(`FFmpeg report (retry) saved: ${latestReport}`);
-                                            
-                                            console.log('=== FFMPEG REPORT (RETRY) PREVIEW ===');
-                                            console.log(reportContent.substring(0, 1000)); // Chỉ log 1KB đầu
-                                            
-                                            // Xóa file report sau khi đã lưu
-                                            fs.unlinkSync(latestReport);
-                                        }
-                                    }
-                                } catch (error) {
-                                    console.error('Error handling FFmpeg report (retry):', error);
-                                }
-                                
                                 // Dọn dẹp file phụ đề tạm
                                 try {
                                     fs.unlinkSync(simplePath);
@@ -2134,135 +1988,6 @@ export async function preprocessVideo(
 }
 
 /**
- * Debug function để kiểm tra sự tồn tại của file
- */
-export async function debugFileExistence(filePath: string, description: string): Promise<void> {
-    console.log(`\n=== DEBUG FILE: ${description} ===`);
-    console.log(`Path: ${filePath}`);
-    console.log(`Is Absolute: ${path.isAbsolute(filePath)}`);
-    console.log(`Resolved Path: ${path.resolve(filePath)}`);
-    
-    try {
-        const exists = fs.existsSync(filePath);
-        console.log(`File exists: ${exists}`);
-        
-        if (exists) {
-            const stats = fs.statSync(filePath);
-            console.log(`File size: ${stats.size} bytes`);
-            console.log(`Is file: ${stats.isFile()}`);
-            console.log(`Is directory: ${stats.isDirectory()}`);
-            console.log(`Created: ${stats.birthtime}`);
-            console.log(`Modified: ${stats.mtime}`);
-        }
-    } catch (error) {
-        console.error(`Error checking file: ${error}`);
-    }
-    
-    // Thử các biến thể đường dẫn khác
-    const alternatives = [
-        path.join('uploads', path.basename(filePath)),
-        path.join('./uploads', path.basename(filePath)),
-        path.join(process.cwd(), 'uploads', path.basename(filePath)),
-        path.join('/app/uploads', path.basename(filePath))
-    ];
-    
-    console.log('\nChecking alternative paths:');
-    alternatives.forEach((altPath, index) => {
-        const exists = fs.existsSync(altPath);
-        console.log(`${index + 1}. ${altPath} - ${exists ? 'EXISTS' : 'NOT FOUND'}`);
-    });
-    
-    console.log('================================\n');
-}
-
-/**
- * Kiểm tra video sau khi burn phụ đề bằng FFprobe
- */
-export async function verifyBurnedSubtitles(videoPath: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-        ffmpeg.ffprobe(videoPath, (err: Error, metadata: FfprobeData) => {
-            if (err) {
-                console.error('Error probing video:', err);
-                reject(err);
-                return;
-            }
-            
-            console.log('=== VERIFYING BURNED SUBTITLES ===');
-            console.log('Format:', metadata.format?.format_name);
-            console.log('Duration:', metadata.format?.duration);
-            
-            // Log thông tin về các streams
-            metadata.streams?.forEach((stream, index) => {
-                console.log(`Stream ${index}:`, {
-                    codec_type: stream.codec_type,
-                    codec_name: stream.codec_name,
-                    width: stream.width,
-                    height: stream.height
-                });
-            });
-            
-            // Với phụ đề được burn, chúng ta không thể phát hiện như stream riêng
-            // Nhưng có thể kiểm tra xem video đã được xử lý chưa
-            const videoStream = metadata.streams?.find(s => s.codec_type === 'video');
-            if (videoStream) {
-                console.log('Video stream found - video was processed');
-                console.log('Codec:', videoStream.codec_name);
-                console.log('Encoded with:', videoStream.encoder);
-                resolve(true);
-            } else {
-                console.log('No video stream found');
-                resolve(false);
-            }
-        });
-    });
-}
-
-/**
- * Test function với cú pháp filter đơn giản nhất
- */
-export async function burnSubtitlesSimpleTest(
-    videoPath: string,
-    subtitlePath: string,
-    outputPath: string
-): Promise<string> {
-    return new Promise((resolve, reject) => {
-        try {
-            // Dùng cú pháp đơn giản nhất có thể
-            const command = ffmpeg(videoPath)
-                .outputOptions('-y')
-                .videoFilters(`subtitles=${subtitlePath}`)
-                .outputOptions('-c:v', 'libx264')
-                .outputOptions('-crf', '18')
-                .outputOptions('-preset', 'slow')
-                .outputOptions('-c:a', 'copy')
-                .output(outputPath);
-
-            command
-                .on('start', (commandLine: string) => {
-                    console.log('Simple test FFmpeg command:', commandLine);
-                })
-                .on('stderr', (stderrLine: string) => {
-                    if (stderrLine.toLowerCase().includes('subtitle')) {
-                        console.log('FFmpeg Subtitle Line:', stderrLine);
-                    }
-                })
-                .on('end', () => {
-                    console.log('Simple test completed successfully');
-                    resolve(outputPath);
-                })
-                .on('error', (err: Error) => {
-                    console.error('Error in simple test:', err);
-                    reject(err);
-                })
-                .run();
-        } catch (error) {
-            console.error('Error setting up simple test:', error);
-            reject(error);
-        }
-    });
-}
-
-/**
  * Tạo phiên bản được tối ưu hóa của hàm processVideoAndGenerateSubtitles
  */
 export async function processVideoAndGenerateSubtitlesOptimized(
@@ -2388,27 +2113,14 @@ export async function processVideoAndGenerateSubtitlesOptimized(
         subtitles = enhancedPostProcessSubtitles(subtitles);
 
         // Tạo đường dẫn phụ đề trong thư mục uploads
-        const subtitlePath = path.join('uploads', 'subtitles.srt');
+        const subtitlePath = 'uploads/subtitles.srt';
         
         // Tạo file phụ đề SRT
         progressTracker(85, 'Creating SRT subtitle file...');
         await createEnhancedSubtitleFile(subtitles, subtitlePath, subtitlePath);
-        
-        // Debug kiểm tra file phụ đề sau khi tạo
-        await debugFileExistence(subtitlePath, 'Subtitle file after creation');
 
         // Tạo tên file output trong thư mục uploads
         const outputVideoPath = path.join('uploads', `output_${path.basename(videoPath)}`);
-        
-        // Debug kiểm tra trước khi burn subtitles
-        console.log('\n=== PRE-BURN DEBUG ===');
-        console.log('Current working directory:', process.cwd());
-        console.log('Video path for burning:', processedVideoPath);
-        console.log('Subtitle path for burning:', subtitlePath);
-        console.log('Output path for burning:', outputVideoPath);
-        
-        await debugFileExistence(processedVideoPath, 'Video file before burning');
-        await debugFileExistence(subtitlePath, 'Subtitle file before burning');
         
         // Gắn cứng phụ đề vào video
         progressTracker(90, 'Burning subtitles into video...');
@@ -2426,17 +2138,6 @@ export async function processVideoAndGenerateSubtitlesOptimized(
             outputVideoPath,
             subtitleStyleName
         );
-        
-        // Debug kiểm tra file output sau khi burn
-        await debugFileExistence(outputVideoPath, 'Output video after burning');
-        
-        // Verify video sau khi burn phụ đề
-        try {
-            const hasSubtitles = await verifyBurnedSubtitles(outputVideoPath);
-            console.log('Video verified - has burned subtitles:', hasSubtitles);
-        } catch (verifyError) {
-            console.error('Error verifying output video:', verifyError);
-        }
 
         progressTracker(100, 'Video and subtitle processing completed!');
 

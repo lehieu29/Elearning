@@ -40,7 +40,7 @@ metadata:
     traefik.ingress.kubernetes.io/session-cookie-secure: "true"
 
     # Content compression
-    traefik.ingress.kubernetes.io/compress: "true"
+    traefik.ingress.kubernetes.io/compress: "false"
 spec:
   tls:
   - hosts:

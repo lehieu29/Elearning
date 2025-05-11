@@ -22,8 +22,7 @@ const isProduction = () => {
 
 // Cấu hình tối ưu cho Traefik Ingress + Socket.IO
 const defaultOptions = {
-  // QUAN TRỌNG: Polling trước, websocket sau
-  transports: ["polling", "websocket"],
+  transports: ["websocket"],
   
   // Cho phép upgrade từ polling sang websocket
   upgrade: true,
